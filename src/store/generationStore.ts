@@ -50,6 +50,8 @@ interface GenerationState {
   playTrack: (generationId: string, versionId?: string) => void;
   pauseTrack: () => void;
   togglePlayPause: () => void;
+  toggleLike: (id: string) => void;
+  markGenerationsAsSeen: () => void;
 
   // User Actions
   updateCredits: (credits: number) => void;
@@ -187,6 +189,7 @@ export const useGenerationStore = create<GenerationState>()(
                 versions,
                 coverImage,
                 title,
+                isNew: true,
               }
             : gen
         ),
@@ -235,6 +238,22 @@ export const useGenerationStore = create<GenerationState>()(
     pauseTrack: () => set({ isPlaying: false }),
 
     togglePlayPause: () => set((state) => ({ isPlaying: !state.isPlaying })),
+
+    toggleLike: (id: string) => {
+      set((state) => ({
+        generations: state.generations.map((gen) =>
+          gen.id === id ? { ...gen, isLiked: !gen.isLiked } : gen
+        ),
+      }));
+    },
+
+    markGenerationsAsSeen: () => {
+      set((state) => ({
+        generations: state.generations.map((gen) =>
+          gen.isNew ? { ...gen, isNew: false } : gen
+        ),
+      }));
+    },
 
     // User Actions
     updateCredits: (credits: number) => {

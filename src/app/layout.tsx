@@ -12,9 +12,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'MusicGPT - AI Music Generation',
+  title: 'MusicGPT',
   description:
     'Create amazing music with AI. Senior Frontend Developer Assessment.',
+  icons: {
+    icon: '/app/favicon.png',
+  },
 };
 
 export default function RootLayout({

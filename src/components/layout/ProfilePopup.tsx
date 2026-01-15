@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useGenerationStore, useUser, useIsProfilePopupOpen } from '@/store';
 import { cn } from '@/lib/utils';
-import { CircularProgress } from '../ui/CircularProgress';
+import { GradientProgress } from '../ui/GradientProgress';
 import { useSocket } from '@/hooks/useSocket';
 
 export function ProfilePopup() {
@@ -20,21 +21,33 @@ export function ProfilePopup() {
   const togglePopup = useGenerationStore((state) => state.toggleProfilePopup);
   const setPopupOpen = useGenerationStore((state) => state.setProfilePopupOpen);
   const generations = useGenerationStore((state) => state.generations);
+  const markGenerationsAsSeen = useGenerationStore(
+    (state) => state.markGenerationsAsSeen
+  );
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Get recent generations (most recent first, max 5)
   const recentGenerations = generations.slice(0, 5);
 
-  // Count active generations
+  // Count active generations (in progress) + new completed generations
   const activeCount = generations.filter(
     (g) =>
       g.status === 'generating' ||
       g.status === 'pending' ||
-      g.status === 'failed'
+      g.status === 'failed' ||
+      g.isNew
   ).length;
 
   // Check for insufficient credits
   const hasInsufficientCredits = user.credits === 0;
+
+  // Mark generations as seen when popup is closed
+  useEffect(() => {
+    if (!isOpen) {
+      // Mark as seen when dropdown closes
+      markGenerationsAsSeen();
+    }
+  }, [isOpen, markGenerationsAsSeen]);
 
   // Close on click outside
   useEffect(() => {
@@ -61,11 +74,11 @@ export function ProfilePopup() {
       {/* Profile Avatar Button */}
       <button
         onClick={togglePopup}
-        className='relative w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-[#FF6B2C] transition-all focus-ring'
+        className='relative w-12 h-12 rounded-full border-2 border-transparent  transition-all focus-ring'
       >
         {/* Avatar with gradient border */}
-        <div className='absolute inset-0 bg-gradient-to-br from-[#FF6B2C] to-[#FF2C9C] rounded-full' />
-        <div className='absolute inset-[2px] bg-[#1A1A1A] rounded-full flex items-center justify-center'>
+        <div className='absolute inset-0 bg-linear-to-br from-[#FF6B2C] to-[#FF2C9C] rounded-full' />
+        <div className='absolute inset-0.5 bg-[#1A1A1A] rounded-full flex items-center justify-center'>
           <span className='text-white font-semibold text-sm'>
             {user.displayName.charAt(0).toUpperCase()}
           </span>
@@ -76,7 +89,7 @@ export function ProfilePopup() {
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className='absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#FF6B2C] rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-[#0D0D0D]'
+            className='absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#6bfeab] rounded-full flex items-center justify-center text-[10px] font-bold text-black border-2 border-[#0D0D0D]'
           >
             {activeCount}
           </motion.span>
@@ -91,15 +104,18 @@ export function ProfilePopup() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2, ease: [0, 0.55, 0.45, 1] }}
-            className='absolute right-0 top-12 w-80 bg-[#1A1A1A] rounded-2xl border border-[#262626] shadow-2xl overflow-hidden z-50'
+            className='absolute right-0 top-20 w-100 bg-[#1A1A1A] rounded-2xl border border-[#262626] shadow-2xl overflow-hidden z-50'
           >
             {/* Header */}
             <div className='p-4 flex items-center justify-between border-b border-[#262626]'>
               <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#FF6B2C] to-[#FF2C9C] flex items-center justify-center'>
-                  <span className='text-white font-semibold'>
-                    {user.displayName.charAt(0).toUpperCase()}
-                  </span>
+                <div className='relative w-16 h-16 rounded-full'>
+                  <div className='absolute inset-0 bg-gradient-to-br from-[#FF6B2C] to-[#FF2C9C] rounded-full' />
+                  <div className='absolute inset-0.5 bg-[#1A1A1A] rounded-full flex items-center justify-center'>
+                    <span className='text-white font-semibold'>
+                      {user.displayName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <div className='font-semibold text-white'>
@@ -190,13 +206,23 @@ interface GenerationItemProps {
     error?: string;
     versions: Array<{ version: number }>;
     coverImage?: string;
+    isNew?: boolean;
   };
   index: number;
 }
 
 function GenerationItem({ generation, index }: GenerationItemProps) {
-  const { status, progress, title, prompt, error, versions, coverImage, id } =
-    generation;
+  const {
+    status,
+    progress,
+    title,
+    prompt,
+    error,
+    versions,
+    coverImage,
+    id,
+    isNew,
+  } = generation;
   const { retryGeneration } = useSocket();
   const removeGeneration = useGenerationStore(
     (state) => state.removeGeneration
@@ -212,80 +238,119 @@ function GenerationItem({ generation, index }: GenerationItemProps) {
       className='p-3 mx-3 my-2'
     >
       {status === 'failed' ? (
-        <div className='p-3 rounded-lg bg-[#1F1414] border border-[#3D1F1F]'>
-          <div className='flex items-start gap-3'>
-            <div className='w-10 h-10 rounded-lg bg-[#2A1A1A] flex items-center justify-center flex-shrink-0'>
-              <span className='text-lg'>😢</span>
+        error?.includes('Server busy') ? (
+          // Server Busy Error - Simple inline design
+          <div className='p-3 rounded-lg bg-[#1A1A1A]'>
+            <div className='flex items-center gap-2'>
+              <AlertTriangle className='w-4 h-4 text-[#EF4444]' />
+              <span className='text-sm text-[#EF4444]'>Oops! Server busy.</span>
             </div>
-            <div className='flex-1 min-w-0'>
-              <div className='font-medium text-[#EF4444] text-sm'>
-                Invalid Prompt
+            <p className='text-sm text-[#A3A3A3] mt-1'>
+              4.9K users in the queue.{' '}
+              <button
+                onClick={() => retryGeneration(id)}
+                className='text-white underline hover:no-underline'
+              >
+                Retry
+              </button>
+            </p>
+          </div>
+        ) : (
+          // Invalid Prompt Error - Card with icon
+          <div className='p-4 rounded-xl bg-[#1A1A1A]'>
+            <div className='flex items-start gap-3'>
+              <div
+                className='w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0'
+                style={{
+                  background:
+                    'linear-gradient(135deg, rgba(200, 0, 255, 1) 0%, rgba(255, 44, 155, 1) 25%, rgba(255, 123, 0, 1) 50%, rgba(255, 133, 4, 1) 75%, rgba(255, 211, 99, 1) 100%)',
+                }}
+              >
+                <span className='text-2xl'>🥲</span>
               </div>
-              <p className='text-xs text-[#A3A3A3] mt-0.5 line-clamp-2'>
-                {error ||
-                  'Your prompt does not seem to be valid. Please provide a prompt related to song creation.'}
+              <div className='flex-1 min-w-0'>
+                <div className='font-medium text-white text-sm'>
+                  Invalid Prompt
+                </div>
+                <p className='text-xs text-[#737373] mt-0.5 truncate'>
+                  {prompt}
+                </p>
+              </div>
+            </div>
+            <p className='text-sm text-[#A3A3A3] mt-3'>
+              Your prompt does not seem to be valid. Please provide a prompt
+              related to song creation, remixing, covers, or similar music
+              tasks.
+            </p>
+            <div className='flex gap-2 mt-4'>
+              <button
+                onClick={() => retryGeneration(id)}
+                className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => navigator.clipboard.writeText(prompt)}
+                className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
+              >
+                Copy prompt
+              </button>
+            </div>
+          </div>
+        )
+      ) : status === 'generating' || status === 'pending' ? (
+        <div className='relative rounded-xl overflow-hidden'>
+          {/* Progress background */}
+          <motion.div
+            className='absolute inset-0 bg-[#ffffff0d]'
+            initial={{ width: '0%' }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+          <div className='relative flex items-center gap-3 p-2'>
+            <GradientProgress
+              progress={progress}
+              size={44}
+              imageUrl='/art.jpg'
+            />
+            <div className='flex-1 min-w-0'>
+              <p className='text-xs text-[#A3A3A3] truncate'>
+                {prompt.length > 35 ? prompt.slice(0, 35) + '...' : prompt}
+              </p>
+              <p className='text-xs text-[#525252] mt-0.5'>
+                {status === 'generating'
+                  ? 'Starting AI audio engine'
+                  : 'In queue...'}
               </p>
             </div>
-            <button
-              onClick={() => removeGeneration(id)}
-              className='text-[#737373] hover:text-white transition-colors'
-            >
-              <X className='w-4 h-4' />
-            </button>
+            {versions.length > 0 && (
+              <span className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5'>
+                v{versions.length}
+              </span>
+            )}
           </div>
-
-          {/* Server Busy Error */}
-          {error?.includes('Server busy') && (
-            <div className='mt-2 p-2 rounded-lg bg-[#261A14] border border-[#3D2A1F]'>
-              <div className='flex items-center gap-2'>
-                <AlertTriangle className='w-4 h-4 text-[#F59E0B]' />
-                <span className='text-xs text-[#F59E0B]'>
-                  Oops! Server busy:
-                </span>
-              </div>
-              <div className='flex items-center justify-between mt-1'>
-                <span className='text-xs text-[#A3A3A3]'>
-                  4.9K users in the queue.
-                </span>
-                <button
-                  onClick={() => retryGeneration(id)}
-                  className='text-xs text-white underline hover:no-underline flex items-center gap-1'
-                >
-                  <RefreshCw className='w-3 h-3' /> Retry
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : status === 'generating' || status === 'pending' ? (
-        <div className='flex items-center gap-3'>
-          <CircularProgress progress={progress} size={44} strokeWidth={3} />
-          <div className='flex-1 min-w-0'>
-            <p className='text-xs text-[#A3A3A3] truncate'>
-              {prompt.length > 35 ? prompt.slice(0, 35) + '...' : prompt}
-            </p>
-            <p className='text-xs text-[#525252] mt-0.5'>
-              {status === 'generating'
-                ? 'Starting AI audio engine'
-                : 'In queue...'}
-            </p>
-          </div>
-          {versions.length > 0 && (
-            <span className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5'>
-              v{versions.length}
-            </span>
-          )}
         </div>
       ) : status === 'completed' ? (
         <div className='flex items-center gap-3'>
-          <div
-            className='w-11 h-11 rounded-lg flex-shrink-0'
-            style={{
-              background:
-                coverImage ||
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}
-          />
+          <div className='relative w-16 h-16 shrink-0'>
+            <div className='w-full h-full rounded-xl overflow-hidden'>
+              <Image
+                src='/art.jpg'
+                alt={title}
+                fill
+                className='object-cover rounded-xl'
+              />
+            </div>
+            {/* Green heartbeat blip for new generations */}
+            {isNew && (
+              <div className='absolute -top-1 -left-1 z-10'>
+                <span className='relative flex h-5 w-5'>
+                  <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75'></span>
+                  <span className='relative inline-flex rounded-full h-5 w-5 bg-[#22C55E]'></span>
+                </span>
+              </div>
+            )}
+          </div>
           <div className='flex-1 min-w-0'>
             <p className='text-sm text-white font-medium truncate'>{title}</p>
             <p className='text-xs text-[#525252] mt-0.5'>Completed</p>

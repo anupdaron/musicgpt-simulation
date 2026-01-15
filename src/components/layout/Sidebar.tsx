@@ -45,12 +45,12 @@ export function Sidebar() {
             <Image
               src='/logo.svg'
               alt='MusicGPT Logo'
-              width={20}
-              height={20}
+              width={32}
+              height={32}
               className='text-white'
             />
           </div>
-          <span className='text-lg text-white group-hover:text-[#FF6B2C] transition-colors'>
+          <span className='font-medium text-white transition-colors'>
             MusicGPT
           </span>
         </Link>
@@ -58,7 +58,7 @@ export function Sidebar() {
 
       {/* Search */}
       <div className='px-4 mb-10'>
-        <button className='w-full flex items-center gap-3 px-3 py-2.5 rounded-4xl bg-[#1A1A1A] text-[#737373] hover:bg-[#262626] hover:text-[#A3A3A3] transition-all group'>
+        <button className='w-full flex items-center gap-3 px-3 py-2.5 rounded-4xl bg-transparent  hover:bg-[#262626] transition-all group border border-[#FFFFFF29]'>
           <Search className='w-4 h-4' />
           <span className='text-sm'>Search</span>
           <span className='ml-auto text-xs text-[#525252] group-hover:text-[#737373]'>
@@ -78,10 +78,10 @@ export function Sidebar() {
                 <Link
                   href={item.href === '/create' ? '/' : item.href}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-2.5 rounded-4xl transition-all relative group',
+                    'inline-flex items-center gap-3 px-4 py-2.5 rounded-4xl transition-all relative group',
                     isActive
-                      ? 'text-white bg-[#1A1A1A]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#141414]'
+                      ? 'text-white bg-[#FFFFFF17]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#FFFFFF17]'
                   )}
                 >
                   <item.icon className={cn('w-5 h-5 transition-colors')} />
@@ -132,11 +132,11 @@ export function Sidebar() {
 
       {/* Model Version Banner */}
       <div className='p-4'>
-        <div className='p-4 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#141414] border border-[#262626]'>
-          <div className='text-xs font-semibold text-[#FF6B2C] mb-1'>
+        <div className='p-4 rounded-xl bg-[linear-gradient(210deg,rgba(48,7,255,0.29)_0%,rgba(209,40,150,0.27)_50%,rgba(255,86,35,0.25)_100%)] border border-[#ffffff10]'>
+          <div className='text-xs font-semibold text-white mb-1'>
             Model v6 Pro is here!
           </div>
-          <p className='text-xs text-[#737373] leading-relaxed'>
+          <p className='text-xs font-light text-[#ffffffdc] leading-relaxed'>
             Pushing boundaries to the world's best AI music model
           </p>
         </div>
