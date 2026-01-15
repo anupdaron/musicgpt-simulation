@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Play,
@@ -10,11 +11,13 @@ import {
   RefreshCw,
   Check,
   Clock,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { useGenerationStore } from '@/store';
 import { useSocket } from '@/hooks/useSocket';
 import { cn, formatDuration } from '@/lib/utils';
-import { CircularProgress } from '../ui/CircularProgress';
+import { GradientProgress } from '../ui/GradientProgress';
 import type { Generation } from '@/types';
 
 interface GenerationCardProps {
@@ -26,9 +29,20 @@ export function GenerationCard({
   generation,
   variant = 'full',
 }: GenerationCardProps) {
-  const { id, title, prompt, status, progress, coverImage, versions, error } =
-    generation;
+  const {
+    id,
+    title,
+    prompt,
+    status,
+    progress,
+    coverImage,
+    versions,
+    error,
+    isLiked,
+    isNew,
+  } = generation;
   const playTrack = useGenerationStore((state) => state.playTrack);
+  const toggleLike = useGenerationStore((state) => state.toggleLike);
   const currentlyPlayingId = useGenerationStore(
     (state) => state.currentlyPlayingId
   );
@@ -70,8 +84,12 @@ export function GenerationCard({
         />
 
         <div className='relative flex items-center gap-4'>
-          {/* Circular Progress */}
-          <CircularProgress progress={progress} size={56} strokeWidth={3} />
+          {/* Gradient Progress */}
+          <GradientProgress
+            progress={progress}
+            size={64}
+            imageUrl='/album-art.jpg'
+          />
 
           {/* Content */}
           <div className='flex-1 min-w-0'>
@@ -176,14 +194,13 @@ export function GenerationCard({
       <div className='flex items-center gap-4'>
         {/* Cover Image with Play Overlay */}
         <div className='relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0'>
-          <div
-            className='w-full h-full'
-            style={{
-              background:
-                coverImage ||
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}
+          <Image
+            src='/album-art.jpg'
+            alt={title}
+            fill
+            className='object-cover'
           />
+
           {/* Play/Pause Overlay */}
           <div
             className={cn(
@@ -229,7 +246,7 @@ export function GenerationCard({
         </div>
 
         {/* Version Buttons */}
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
           {versions.map((version) => (
             <motion.button
               key={version.id}
@@ -247,6 +264,31 @@ export function GenerationCard({
               v{version.version}
             </motion.button>
           ))}
+        </div>
+
+        {/* Thumbs Up/Down Buttons */}
+        <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike(id);
+            }}
+            className={cn(
+              'p-2 rounded-lg transition-all hover:bg-[#262626]',
+              isLiked ? 'text-[#22C55E]' : 'text-[#525252] hover:text-white'
+            )}
+          >
+            <ThumbsUp className={cn('w-4 h-4', isLiked && 'fill-current')} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              // Could add dislike functionality here
+            }}
+            className='p-2 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all'
+          >
+            <ThumbsDown className='w-4 h-4' />
+          </button>
         </div>
 
         {/* More Options */}

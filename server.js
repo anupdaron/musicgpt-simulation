@@ -19,37 +19,32 @@ const randomBetween = (min, max) =>
 
 // Simulate generation process
 function simulateGeneration(io, socketId, generationId, prompt) {
-  let progress = 0;
   const willFail = Math.random() < 0.15; // 15% failure rate
-  const failAtProgress = randomBetween(20, 70);
+  const failAtStep = willFail ? randomBetween(1, 3) : -1; // Fail at step 1, 2, or 3
+
+  const progressSteps = [0, 25, 50, 75, 90, 100];
+  let stepIndex = 0;
 
   const progressMessages = [
     'Starting AI audio engine',
     'Analyzing prompt...',
     'Generating melody structure',
     'Synthesizing instruments',
-    'Adding vocal layers',
     'Mixing and mastering',
     'Finalizing output',
   ];
 
+  // Emit initial progress (0%) immediately
+  io.to(socketId).emit('GENERATION_PROGRESS', {
+    generationId,
+    progress: progressSteps[0],
+    message: progressMessages[0],
+  });
+
   const interval = setInterval(() => {
-    progress += randomBetween(5, 15);
+    stepIndex++;
 
-    // Check for failure
-    if (willFail && progress >= failAtProgress) {
-      clearInterval(interval);
-      activeGenerations.delete(generationId);
-
-      io.to(socketId).emit('GENERATION_FAILED', {
-        generationId,
-        error: 'Server busy. 4.9K users in the queue.',
-      });
-      return;
-    }
-
-    // Check for completion
-    if (progress >= 100) {
+    if (stepIndex >= progressSteps.length) {
       clearInterval(interval);
       activeGenerations.delete(generationId);
 
@@ -107,18 +102,28 @@ function simulateGeneration(io, socketId, generationId, prompt) {
       return;
     }
 
-    // Send progress update
-    const messageIndex = Math.min(
-      Math.floor(progress / 15),
-      progressMessages.length - 1
-    );
+    // Check for failure
+    if (willFail && stepIndex === failAtStep) {
+      clearInterval(interval);
+      activeGenerations.delete(generationId);
 
+      io.to(socketId).emit('GENERATION_FAILED', {
+        generationId,
+        error: 'Server busy. 4.9K users in the queue.',
+      });
+      return;
+    }
+
+    const progress = progressSteps[stepIndex];
+
+    // Send progress update
     io.to(socketId).emit('GENERATION_PROGRESS', {
       generationId,
-      progress: Math.min(progress, 99),
-      message: progressMessages[messageIndex],
+      progress,
+      message:
+        progressMessages[Math.min(stepIndex, progressMessages.length - 1)],
     });
-  }, 800); // Update every 800ms
+  }, 1500); // Update every 1.5 seconds
 
   // Store interval for potential cleanup
   activeGenerations.set(generationId, { interval, socketId });

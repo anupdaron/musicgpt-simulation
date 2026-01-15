@@ -17,6 +17,8 @@ export interface Generation {
   versions: GenerationVersion[];
   error?: string;
   coverImage?: string;
+  isLiked?: boolean;
+  isNew?: boolean;
 }
 
 // Each generation can have multiple versions (v1, v2, etc.)

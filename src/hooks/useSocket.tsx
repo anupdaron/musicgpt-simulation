@@ -225,29 +225,33 @@ function simulateGeneration(
 
   // Simulate random failure (10% chance)
   const willFail = Math.random() < 0.1;
-  const failAtProgress = Math.floor(Math.random() * 60) + 20; // Fail between 20-80%
+  const failAtStep = willFail ? Math.floor(Math.random() * 3) + 1 : -1; // Fail at step 1, 2, or 3
 
-  let progress = 0;
+  const progressSteps = [0, 25, 50, 75, 90, 100];
+  let stepIndex = 0;
+
   const progressMessages = [
     'Starting AI audio engine',
     'Analyzing prompt...',
     'Generating melody structure',
     'Synthesizing instruments',
-    'Adding vocal layers',
     'Mixing and mastering',
     'Finalizing output',
   ];
 
-  const interval = setInterval(() => {
-    progress += Math.floor(Math.random() * 15) + 5; // Random increment 5-20
+  // Emit initial progress (0%) immediately
+  updateProgress(generationId, progressSteps[0], progressMessages[0]);
 
-    if (willFail && progress >= failAtProgress) {
+  const interval = setInterval(() => {
+    stepIndex++;
+
+    if (willFail && stepIndex === failAtStep) {
       clearInterval(interval);
       fail(generationId, 'Server busy. 4.9K users in the queue.');
       return;
     }
 
-    if (progress >= 100) {
+    if (stepIndex >= progressSteps.length) {
       clearInterval(interval);
 
       // Generate completed versions
@@ -282,11 +286,11 @@ function simulateGeneration(
       const currentCredits = useGenerationStore.getState().user.credits;
       updateCredits(Math.max(0, currentCredits - 20));
     } else {
-      const messageIndex = Math.min(
-        Math.floor(progress / 15),
-        progressMessages.length - 1
+      updateProgress(
+        generationId,
+        progressSteps[stepIndex],
+        progressMessages[stepIndex]
       );
-      updateProgress(generationId, progress, progressMessages[messageIndex]);
     }
-  }, 800); // Update every 800ms
+  }, 1500); // Update every 1.5 seconds
 }
