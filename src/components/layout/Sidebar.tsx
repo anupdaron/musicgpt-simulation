@@ -82,9 +82,9 @@ function LanguageDropdown() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className='absolute bottom-full left-0 mb-2 w-52 rounded-lg border 0 shadow-xl z-100 border-white/10 overflow-hidden bg-neutral-900'
+            className='absolute bottom-full left-0 mb-2 w-52  border 0 shadow-xl z-100 border-white/10 overflow-hidden bg-neutral-900 rounded-2xl'
           >
-            <div className='py-1'>
+            <div>
               {languages.map((lang) => (
                 <button
                   key={lang.code}
