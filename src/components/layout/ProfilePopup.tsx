@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,11 +9,61 @@ import {
   AlertTriangle,
   X,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { useGenerationStore, useUser, useIsProfilePopupOpen } from '@/store';
 import { cn } from '@/lib/utils';
 import { GradientProgress } from '../ui/GradientProgress';
 import { useSocket } from '@/hooks/useSocket';
+
+// Skeleton component for loading state
+function GenerationSkeleton() {
+  return (
+    <div className='p-3 mx-3 my-2'>
+      <div className='flex items-center gap-3 animate-pulse'>
+        <div className='w-16 h-16 rounded-xl bg-[#262626] shrink-0' />
+        <div className='flex-1 min-w-0 space-y-2'>
+          <div className='h-4 bg-[#262626] rounded w-3/4' />
+          <div className='h-3 bg-[#262626] rounded w-1/2' />
+        </div>
+        <div className='h-5 w-8 bg-[#262626] rounded' />
+      </div>
+    </div>
+  );
+}
+
+// Shimmer effect skeleton variant
+function GenerationSkeletonShimmer() {
+  return (
+    <div className='p-3 mx-3 my-2'>
+      <div className='flex items-center gap-3'>
+        <div className='relative w-16 h-16 rounded-xl bg-[#1f1f1f] shrink-0 overflow-hidden'>
+          <div className='absolute inset-0 animate-shimmer-slide bg-linear-to-r from-transparent via-[#2a2a2a] to-transparent' />
+        </div>
+        <div className='flex-1 min-w-0 space-y-2'>
+          <div className='relative h-4 bg-[#1f1f1f] rounded w-3/4 overflow-hidden'>
+            <div
+              className='absolute inset-0 animate-shimmer-slide bg-linear-to-r from-transparent via-[#2a2a2a] to-transparent'
+              style={{ animationDelay: '0.1s' }}
+            />
+          </div>
+          <div className='relative h-3 bg-[#1f1f1f] rounded w-1/2 overflow-hidden'>
+            <div
+              className='absolute inset-0 animate-shimmer-slide bg-linear-to-r from-transparent via-[#2a2a2a] to-transparent'
+              style={{ animationDelay: '0.2s' }}
+            />
+          </div>
+        </div>
+        <div className='relative h-5 w-8 bg-[#1f1f1f] rounded overflow-hidden'>
+          <div
+            className='absolute inset-0 animate-shimmer-slide bg-linear-to-r from-transparent via-[#2a2a2a] to-transparent'
+            style={{ animationDelay: '0.3s' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProfilePopup() {
   const user = useUser();
@@ -25,9 +75,61 @@ export function ProfilePopup() {
     (state) => state.markGenerationsAsSeen
   );
   const popupRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Pagination state
+  const ITEMS_PER_PAGE = 5;
+  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Get displayed generations based on pagination
+  const displayedGenerations = generations.slice(0, displayedCount);
+
+  // Update hasMore when generations or displayedCount changes
+  useEffect(() => {
+    setHasMore(displayedCount < generations.length);
+  }, [displayedCount, generations.length]);
+
+  // Reset pagination when popup opens
+  useEffect(() => {
+    if (isOpen) {
+      setDisplayedCount(ITEMS_PER_PAGE);
+      setHasMore(generations.length > ITEMS_PER_PAGE);
+    }
+  }, [isOpen, generations.length]);
+
+  // Simulate loading more items (mimics API fetch delay)
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+
+    // Simulate network delay (1-2 seconds)
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setDisplayedCount((prev) => {
+      const newCount = prev + ITEMS_PER_PAGE;
+      return Math.min(newCount, generations.length);
+    });
+    setIsLoadingMore(false);
+  }, [isLoadingMore, hasMore, generations.length]);
+
+  // Infinite scroll handler
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+      const scrollThreshold = 50; // pixels from bottom
+
+      if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
+        loadMore();
+      }
+    },
+    [loadMore]
+  );
 
   // Get recent generations (most recent first, max 5)
-  const recentGenerations = generations.slice(0, 5);
+  const recentGenerations = displayedGenerations;
 
   // Count active generations (in progress) + new completed generations
   const activeCount = generations.filter(
@@ -147,7 +249,11 @@ export function ProfilePopup() {
             </div>
 
             {/* Generations List */}
-            <div className='max-h-80 overflow-y-auto'>
+            <div
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className='max-h-80 overflow-y-auto'
+            >
               {/* Insufficient Credits Warning */}
               {hasInsufficientCredits && (
                 <motion.div
@@ -182,6 +288,49 @@ export function ProfilePopup() {
                   />
                 ))}
               </AnimatePresence>
+
+              {/* Loading Skeletons for infinite scroll */}
+              {isLoadingMore && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <GenerationSkeletonShimmer />
+                  <GenerationSkeletonShimmer />
+                  <GenerationSkeletonShimmer />
+                </motion.div>
+              )}
+
+              {/* Load More Indicator */}
+              {hasMore && !isLoadingMore && recentGenerations.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className='py-3 text-center'
+                >
+                  <button
+                    onClick={loadMore}
+                    className='text-xs text-[#525252] hover:text-[#737373] transition-colors flex items-center gap-1 mx-auto'
+                  >
+                    <Loader2 className='w-3 h-3' />
+                    Scroll for more
+                  </button>
+                </motion.div>
+              )}
+
+              {/* End of list indicator */}
+              {!hasMore && recentGenerations.length > ITEMS_PER_PAGE && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className='py-3 text-center'
+                >
+                  <span className='text-xs text-[#404040]'>
+                    No more generations
+                  </span>
+                </motion.div>
+              )}
 
               {recentGenerations.length === 0 && (
                 <div className='p-8 text-center text-[#525252]'>
