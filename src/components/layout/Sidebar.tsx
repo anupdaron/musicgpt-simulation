@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ import {
   Plus,
   Music2,
   ChevronLeft,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -29,6 +30,94 @@ const libraryItems = [
   { icon: User, label: 'Profile', href: '/profile' },
   { icon: Heart, label: 'Liked', href: '/liked' },
 ];
+
+const languages = [
+  { code: 'EN', flag: '/flag-usa.svg', name: 'English' },
+  { code: 'ES', flag: '/flag-spain.svg', name: 'Español' },
+  { code: 'DE', flag: '/flag-germany.svg', name: 'Deutsch' },
+  { code: 'KR', flag: '/flag-korea.svg', name: '한국어' },
+];
+
+function LanguageDropdown() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selected, setSelected] = useState(languages[0]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className='relative' ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className='flex items-center gap-1 hover:text-[#A3A3A3] transition-colors'
+      >
+        <Image
+          src={selected.flag}
+          alt={selected.name}
+          width={14}
+          height={10}
+          className='rounded-sm'
+        />
+        <span>{selected.code}</span>
+        <ChevronDown
+          className={cn('w-3 h-3 transition-transform', isOpen && 'rotate-180')}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className='absolute bottom-full left-0 mb-2 w-52 rounded-lg border 0 shadow-xl z-100 border-white/10 overflow-hidden bg-neutral-900'
+          >
+            <div className='py-1'>
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setSelected(lang);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-4 text-xs transition-colors',
+                    selected.code === lang.code
+                      ? 'text-white bg-white/10'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-white/5'
+                  )}
+                >
+                  <Image
+                    src={lang.flag}
+                    alt={lang.name}
+                    width={16}
+                    height={12}
+                    className='rounded-sm'
+                  />
+                  <span>{lang.code}</span>
+                  <span className='text-[#525252]'>-</span>
+                  <span className='truncate'>{lang.name}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -164,7 +253,7 @@ export function Sidebar() {
 
       {/* Footer Links */}
       <div className='px-4 pb-4'>
-        <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#525252]'>
+        <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/50'>
           <a href='#' className='hover:text-[#A3A3A3] transition-colors'>
             Pricing
           </a>
@@ -178,13 +267,14 @@ export function Sidebar() {
             About
           </a>
         </div>
-        <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#525252] mt-1'>
+        <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/50 mt-1'>
           <a href='#' className='hover:text-[#A3A3A3] transition-colors'>
             Terms
           </a>
           <a href='#' className='hover:text-[#A3A3A3] transition-colors'>
             Privacy
           </a>
+          <LanguageDropdown />
         </div>
       </div>
     </>
@@ -197,7 +287,7 @@ export function Sidebar() {
         initial={{ x: -240, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: [0, 0.55, 0.45, 1] }}
-        className='hidden md:flex fixed left-0 top-0 h-screen w-60 bg-[#0D0D0D] border-r border-[#1A1A1A] flex-col z-40'
+        className='hidden md:flex fixed left-0 top-0 h-screen w-60 bg-[rgb(255_255_255_/_0.03)] border-r border-[#1A1A1A] flex-col z-40'
       >
         {sidebarContent}
       </motion.aside>
@@ -220,7 +310,7 @@ export function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className='md:hidden fixed left-0 top-0 h-screen w-60 bg-[#0D0D0D] border-r border-[#1A1A1A] flex flex-col z-50'
+              className='md:hidden fixed left-0 top-0 h-screen w-60 bg-[rgb(255_255_255_/_0.03)] border-r border-[#1A1A1A] flex flex-col z-50'
             >
               {sidebarContent}
             </motion.aside>

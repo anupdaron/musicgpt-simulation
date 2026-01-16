@@ -8,7 +8,7 @@
 
 :root {
   /* Dark Theme Colors */
-  --background: #0d0d0d;
+  --background: #0a0c0d;
   --background-secondary: #141414;
   --background-tertiary: #1a1a1a;
   --background-elevated: #1f1f1f;
@@ -201,25 +201,17 @@ body {
   }
 }
 
-@keyframes glow-frame-4 {
-  0%,
-  45% {
-    opacity: 0;
-  }
-  65%,
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 .glow-image-container {
   position: absolute;
-  inset: -25px;
+  inset: -15px;
   pointer-events: none;
   z-index: 0;
+}
+
+@media (min-width: 768px) {
+  .glow-image-container {
+    inset: -25px;
+  }
 }
 
 .glow-image-frame {

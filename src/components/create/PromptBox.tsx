@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Paperclip,
   Settings2,
-  AudioWaveform,
   Music,
   ChevronDown,
   ArrowRight,
   Loader2,
+  Upload,
+  Mic,
+  Link2,
 } from 'lucide-react';
 import { cn, PLACEHOLDER_PROMPTS, EASING, DURATION } from '@/lib/utils';
 import { useSocket } from '@/hooks/useSocket';
@@ -22,11 +24,27 @@ export function PromptBox() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [displayedPlaceholder, setDisplayedPlaceholder] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
   const { submitPrompt } = useSocket();
 
   const user = useGenerationStore((state) => state.user);
   const hasCredits = user.credits > 0;
+
+  // Close attach menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        attachMenuRef.current &&
+        !attachMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsAttachMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Cycling placeholder animation
   useEffect(() => {
@@ -121,11 +139,10 @@ export function PromptBox() {
           <div className='glow-image-frame glow-frame-1' />
           <div className='glow-image-frame glow-frame-2' />
           <div className='glow-image-frame glow-frame-3' />
-          <div className='glow-image-frame glow-frame-4' />
         </div>
 
         {/* Inner Container */}
-        <div className='relative bg-[#1D2125] rounded-3xl md:rounded-4xl overflow-hidden border border-[#262626]'>
+        <div className='relative bg-[#1D2125] rounded-3xl md:rounded-4xl border border-[#262626]'>
           {/* Textarea */}
           <div className='p-3 md:p-4 pb-2'>
             <div className='relative'>
@@ -174,15 +191,63 @@ export function PromptBox() {
 
           {/* Bottom Toolbar */}
           <div className='px-3 md:px-4 pb-3 md:pb-4 flex items-center justify-between gap-2'>
-            <div className='flex items-center gap-0.5 md:gap-1 overflow-x-auto'>
-              {/* Attachment Button */}
-              <ToolbarButton icon={Paperclip} tooltip='Attach reference' />
+            <div className='flex items-center gap-0.5 md:gap-1'>
+              {/* Attachment Button with Dropdown */}
+              <div className='relative' ref={attachMenuRef}>
+                <button
+                  onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
+                  className={cn(
+                    'w-10 h-10 rounded-lg flex items-center justify-center transition-all',
+                    isAttachMenuOpen
+                      ? 'text-white bg-[#1F1F1F]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]'
+                  )}
+                >
+                  <Paperclip className='w-5 h-5' />
+                </button>
+
+                <AnimatePresence>
+                  {isAttachMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className='absolute top-full left-0 mt-2 w-44 bg-[#1D2125] rounded-xl border shadow-xl z-[100] border-white/10'
+                    >
+                      <div className='py-1'>
+                        <button
+                          onClick={() => setIsAttachMenuOpen(false)}
+                          className='w-full flex items-center gap-3 px-4 py-2.5 text-[#E5E5E5] hover:bg-[#262626] transition-colors'
+                        >
+                          <Upload className='w-4 h-4 text-[#737373]' />
+                          <span className='text-sm'>Upload file</span>
+                        </button>
+                        <button
+                          onClick={() => setIsAttachMenuOpen(false)}
+                          className='w-full flex items-center gap-3 px-4 py-2.5 text-[#E5E5E5] hover:bg-[#262626] transition-colors'
+                        >
+                          <Mic className='w-4 h-4 text-[#737373]' />
+                          <span className='text-sm'>Record</span>
+                        </button>
+                        <button
+                          onClick={() => setIsAttachMenuOpen(false)}
+                          className='w-full flex items-center gap-3 px-4 py-2.5 text-[#E5E5E5] hover:bg-[#262626] transition-colors'
+                        >
+                          <Link2 className='w-4 h-4 text-[#737373]' />
+                          <span className='text-sm'>Youtube link</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Settings Button */}
               <ToolbarButton icon={Settings2} tooltip='Advanced settings' />
 
               {/* Instrumental Toggle - Hidden on very small screens */}
-              <button className='hidden xs:flex items-center gap-1 px-2 md:px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all border border-[#333333]'>
+              <button className='hidden xs:flex items-center gap-1 px-2 md:px-3 py-2  rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all border border-neutral-400'>
                 <span className='w-3 h-3 rounded-full border border-current' />
                 <span className='text-xs md:text-sm'>Instrumental</span>
               </button>
@@ -230,22 +295,6 @@ export function PromptBox() {
           </div>
         </div>
       </motion.div>
-
-      {/* Tools Pills - Mobile only */}
-      <div className='flex md:hidden gap-2 mt-4 overflow-x-auto pb-2 -mx-2 px-2'>
-        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
-          <span className='text-[#FF6B2C]'>🎵</span>
-          Create Sound
-        </button>
-        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
-          <span>💬</span>
-          Speak text
-        </button>
-        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
-          <span className='text-[#22C55E]'>✨</span>
-          Change file
-        </button>
-      </div>
 
       {/* Model Info - Hidden on mobile */}
       <motion.div
