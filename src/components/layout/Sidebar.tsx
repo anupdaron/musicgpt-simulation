@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Home,
@@ -13,9 +13,11 @@ import {
   Heart,
   Plus,
   Music2,
+  ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useGenerationStore, useIsSidebarOpen } from '@/store';
 
 const navigationItems = [
   { icon: Home, label: 'Home', href: '/' },
@@ -30,17 +32,35 @@ const libraryItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const isSidebarOpen = useIsSidebarOpen();
+  const setSidebarOpen = useGenerationStore((state) => state.setSidebarOpen);
 
-  return (
-    <motion.aside
-      initial={{ x: -240, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.3, ease: [0, 0.55, 0.45, 1] }}
-      className='fixed left-0 top-0 h-screen w-60 bg-[#0D0D0D] border-r border-[#1A1A1A] flex flex-col z-40'
-    >
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
+
+  // Close sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [setSidebarOpen]);
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
-      <div className='p-6'>
+      <div className='p-6 flex items-center justify-between'>
         <Link href='/' className='flex items-center gap-2 group'>
+          {/* Mobile back button */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className='md:hidden w-8 h-8 rounded-lg bg-[#262626] flex items-center justify-center mr-2'
+          >
+            <ChevronLeft className='w-4 h-4' />
+          </button>
           <div className='flex items-center justify-center'>
             <Image
               src='/logo.svg'
@@ -61,8 +81,8 @@ export function Sidebar() {
         <button className='w-full flex items-center gap-3 px-3 py-2.5 rounded-4xl bg-transparent  hover:bg-[#262626] transition-all group border border-[#FFFFFF29]'>
           <Search className='w-4 h-4' />
           <span className='text-sm'>Search</span>
-          <span className='ml-auto text-xs text-[#525252] group-hover:text-[#737373]'>
-            ⌘K
+          <span className='ml-auto text-xs text-[#525252] group-hover:text-[#737373] hidden md:inline'>
+            Ctrl+K
           </span>
         </button>
       </div>
@@ -123,15 +143,15 @@ export function Sidebar() {
             <li>
               <button className='w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#141414] transition-all'>
                 <Plus className='w-5 h-5' />
-                <span className='text-sm font-medium'>New playlist</span>
+                <span className='text-sm font-medium'>New Playlist</span>
               </button>
             </li>
           </ul>
         </div>
       </nav>
 
-      {/* Model Version Banner */}
-      <div className='p-4'>
+      {/* Model Version Banner - Hidden on mobile */}
+      <div className='p-4 hidden md:block'>
         <div className='p-4 rounded-xl bg-[linear-gradient(210deg,rgba(48,7,255,0.29)_0%,rgba(209,40,150,0.27)_50%,rgba(255,86,35,0.25)_100%)] border border-[#ffffff10]'>
           <div className='text-xs font-semibold text-white mb-1'>
             Model v6 Pro is here!
@@ -165,11 +185,48 @@ export function Sidebar() {
           <a href='#' className='hover:text-[#A3A3A3] transition-colors'>
             Privacy
           </a>
-          <button className='hover:text-[#A3A3A3] transition-colors flex items-center gap-1'>
-            🇺🇸 EN
-          </button>
         </div>
       </div>
-    </motion.aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <motion.aside
+        initial={{ x: -240, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.3, ease: [0, 0.55, 0.45, 1] }}
+        className='hidden md:flex fixed left-0 top-0 h-screen w-60 bg-[#0D0D0D] border-r border-[#1A1A1A] flex-col z-40'
+      >
+        {sidebarContent}
+      </motion.aside>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className='md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40'
+            />
+            {/* Sidebar */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className='md:hidden fixed left-0 top-0 h-screen w-60 bg-[#0D0D0D] border-r border-[#1A1A1A] flex flex-col z-50'
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

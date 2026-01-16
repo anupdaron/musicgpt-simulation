@@ -59,15 +59,6 @@ function simulateGeneration(io, socketId, generationId, prompt) {
             () => Math.random() * 0.8 + 0.2
           ),
         },
-        {
-          id: `${generationId}_v2`,
-          version: 2,
-          duration: randomBetween(180, 300),
-          waveformData: Array.from(
-            { length: 50 },
-            () => Math.random() * 0.8 + 0.2
-          ),
-        },
       ];
 
       const covers = [

@@ -24,6 +24,8 @@ interface GenerationState {
   // UI State
   isProfilePopupOpen: boolean;
   isPlayerOpen: boolean;
+  isSidebarOpen: boolean;
+  isMobileProfileOpen: boolean;
   currentlyPlayingId: string | null;
   isPlaying: boolean;
 
@@ -47,6 +49,9 @@ interface GenerationState {
   setProfilePopupOpen: (isOpen: boolean) => void;
   toggleProfilePopup: () => void;
   setPlayerOpen: (isOpen: boolean) => void;
+  setSidebarOpen: (isOpen: boolean) => void;
+  toggleSidebar: () => void;
+  setMobileProfileOpen: (isOpen: boolean) => void;
   playTrack: (generationId: string, versionId?: string) => void;
   pauseTrack: () => void;
   togglePlayPause: () => void;
@@ -89,12 +94,6 @@ const initialGenerations: Generation[] = [
         id: 'v1_1',
         version: 1,
         duration: 245,
-        waveformData: generateWaveformData(),
-      },
-      {
-        id: 'v1_2',
-        version: 2,
-        duration: 238,
         waveformData: generateWaveformData(),
       },
     ],
@@ -167,12 +166,6 @@ const initialGenerations: Generation[] = [
         id: 'v5_1',
         version: 1,
         duration: 180,
-        waveformData: generateWaveformData(),
-      },
-      {
-        id: 'v5_2',
-        version: 2,
-        duration: 195,
         waveformData: generateWaveformData(),
       },
     ],
@@ -313,6 +306,8 @@ export const useGenerationStore = create<GenerationState>()(
     user: initialUser,
     isProfilePopupOpen: false,
     isPlayerOpen: false,
+    isSidebarOpen: false,
+    isMobileProfileOpen: false,
     currentlyPlayingId: null,
     isPlaying: false,
 
@@ -413,6 +408,13 @@ export const useGenerationStore = create<GenerationState>()(
 
     setPlayerOpen: (isOpen: boolean) => set({ isPlayerOpen: isOpen }),
 
+    setSidebarOpen: (isOpen: boolean) => set({ isSidebarOpen: isOpen }),
+    toggleSidebar: () =>
+      set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+
+    setMobileProfileOpen: (isOpen: boolean) =>
+      set({ isMobileProfileOpen: isOpen }),
+
     playTrack: (generationId: string) => {
       set({
         currentlyPlayingId: generationId,
@@ -477,6 +479,10 @@ export const useIsProfilePopupOpen = () =>
   useGenerationStore((state) => state.isProfilePopupOpen);
 export const useIsPlayerOpen = () =>
   useGenerationStore((state) => state.isPlayerOpen);
+export const useIsSidebarOpen = () =>
+  useGenerationStore((state) => state.isSidebarOpen);
+export const useIsMobileProfileOpen = () =>
+  useGenerationStore((state) => state.isMobileProfileOpen);
 export const useCurrentlyPlaying = () =>
   useGenerationStore((state) => ({
     id: state.currentlyPlayingId,

@@ -4,5 +4,7 @@ export {
   useUser,
   useIsProfilePopupOpen,
   useIsPlayerOpen,
+  useIsSidebarOpen,
+  useIsMobileProfileOpen,
   useCurrentlyPlaying,
 } from './generationStore';

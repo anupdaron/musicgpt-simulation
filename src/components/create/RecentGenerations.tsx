@@ -111,7 +111,7 @@ export function RecentGenerations() {
   // Show empty state if no generations
   if (generations.length === 0) {
     return (
-      <section className='w-full max-w-4xl mx-auto mt-16'>
+      <section className='w-full max-w-4xl mx-auto mt-8 md:mt-16 px-2 md:px-0'>
         <EmptyState />
       </section>
     );
@@ -123,7 +123,7 @@ export function RecentGenerations() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.5 }}
-      className='w-full max-w-4xl mx-auto mt-16'
+      className='w-full max-w-4xl mx-auto mt-8 md:mt-16 px-2 md:px-0'
     >
       {/* Active Generations */}
       {activeGenerations.length > 0 && (

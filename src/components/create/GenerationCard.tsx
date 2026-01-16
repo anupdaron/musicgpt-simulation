@@ -245,8 +245,8 @@ export function GenerationCard({
           <p className='text-xs text-[#737373] truncate mt-1'>{prompt}</p>
         </div>
 
-        {/* Version Buttons */}
-        <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+        {/* Version Buttons - Hidden on mobile */}
+        <div className='hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
           {versions.map((version) => (
             <motion.button
               key={version.id}
@@ -266,8 +266,8 @@ export function GenerationCard({
           ))}
         </div>
 
-        {/* Thumbs Up/Down Buttons */}
-        <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
+        {/* Thumbs Up/Down Buttons - Hidden on mobile */}
+        <div className='hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -291,10 +291,10 @@ export function GenerationCard({
           </button>
         </div>
 
-        {/* More Options */}
+        {/* More Options - Always visible on mobile */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className='p-2 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all opacity-0 group-hover:opacity-100'
+          className='p-2 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all md:opacity-0 md:group-hover:opacity-100'
         >
           <MoreHorizontal className='w-5 h-5' />
         </button>

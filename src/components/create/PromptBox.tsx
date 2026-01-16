@@ -108,7 +108,7 @@ export function PromptBox() {
   };
 
   return (
-    <div className='w-full max-w-3xl mx-auto'>
+    <div className='w-full max-w-3xl mx-auto px-2 md:px-0'>
       {/* Main Container with Animated Border */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -125,9 +125,9 @@ export function PromptBox() {
         </div>
 
         {/* Inner Container */}
-        <div className='relative bg-[#1D2125] rounded-4xl overflow-hidden border border-[#262626]'>
+        <div className='relative bg-[#1D2125] rounded-3xl md:rounded-4xl overflow-hidden border border-[#262626]'>
           {/* Textarea */}
-          <div className='p-4 pb-2'>
+          <div className='p-3 md:p-4 pb-2'>
             <div className='relative'>
               <textarea
                 ref={textareaRef}
@@ -137,7 +137,7 @@ export function PromptBox() {
                 onBlur={() => setIsFocused(false)}
                 onKeyDown={handleKeyDown}
                 placeholder=''
-                className='w-full bg-transparent text-white text-md placeholder:text-[#525252] resize-none outline-none min-h-7 max-h-32.5'
+                className='w-full bg-transparent text-white text-base md:text-md placeholder:text-[#525252] resize-none outline-none min-h-7 max-h-32.5'
                 rows={1}
                 disabled={isSubmitting}
               />
@@ -151,7 +151,7 @@ export function PromptBox() {
                     exit={{ opacity: 0 }}
                     className='absolute top-0 left-0 pointer-events-none'
                   >
-                    <span className='text-lg text-[#525252]'>
+                    <span className='text-base md:text-lg text-[#525252]'>
                       {displayedPlaceholder}
                       {isTyping && (
                         <span className='inline-block w-0.5 h-5 bg-[#FF6B2C] ml-0.5 animate-pulse' />
@@ -164,7 +164,7 @@ export function PromptBox() {
               {/* Static placeholder when focused but empty */}
               {!prompt && isFocused && (
                 <div className='absolute top-0 left-0 pointer-events-none'>
-                  <span className='text-lg text-[#525252]'>
+                  <span className='text-base md:text-lg text-[#525252]'>
                     Describe your song
                   </span>
                 </div>
@@ -173,27 +173,30 @@ export function PromptBox() {
           </div>
 
           {/* Bottom Toolbar */}
-          <div className='px-4 pb-4 flex items-center justify-between'>
-            <div className='flex items-center gap-1'>
+          <div className='px-3 md:px-4 pb-3 md:pb-4 flex items-center justify-between gap-2'>
+            <div className='flex items-center gap-0.5 md:gap-1 overflow-x-auto'>
               {/* Attachment Button */}
               <ToolbarButton icon={Paperclip} tooltip='Attach reference' />
 
               {/* Settings Button */}
               <ToolbarButton icon={Settings2} tooltip='Advanced settings' />
 
-              {/* Audio Reference Button */}
-              <ToolbarButton icon={AudioWaveform} tooltip='Audio reference' />
+              {/* Instrumental Toggle - Hidden on very small screens */}
+              <button className='hidden xs:flex items-center gap-1 px-2 md:px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all border border-[#333333]'>
+                <span className='w-3 h-3 rounded-full border border-current' />
+                <span className='text-xs md:text-sm'>Instrumental</span>
+              </button>
 
               {/* Lyrics Button */}
-              <button className='flex items-center gap-1.5 px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all'>
+              <button className='flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all'>
                 <Music className='w-4 h-4' />
-                <span className='text-sm'>+ Lyrics</span>
+                <span className='text-xs md:text-sm'>+ Lyrics</span>
               </button>
             </div>
 
-            <div className='flex items-center gap-2'>
-              {/* Tools Dropdown */}
-              <button className='flex items-center gap-1.5 px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all'>
+            <div className='flex items-center gap-2 shrink-0'>
+              {/* Tools Dropdown - Hidden on mobile */}
+              <button className='hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all'>
                 <span className='text-sm'>Tools</span>
                 <ChevronDown className='w-4 h-4' />
               </button>
@@ -228,12 +231,28 @@ export function PromptBox() {
         </div>
       </motion.div>
 
-      {/* Model Info */}
+      {/* Tools Pills - Mobile only */}
+      <div className='flex md:hidden gap-2 mt-4 overflow-x-auto pb-2 -mx-2 px-2'>
+        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
+          <span className='text-[#FF6B2C]'>🎵</span>
+          Create Sound
+        </button>
+        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
+          <span>💬</span>
+          Speak text
+        </button>
+        <button className='flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] border border-[#262626] text-white text-sm whitespace-nowrap'>
+          <span className='text-[#22C55E]'>✨</span>
+          Change file
+        </button>
+      </div>
+
+      {/* Model Info - Hidden on mobile */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className='mt-4 text-center'
+        className='mt-4 text-center hidden md:block'
       >
         <span className='text-sm text-[#525252]'>
           MusicGPT v6 Pro - Our latest AI audio model!{' '}
