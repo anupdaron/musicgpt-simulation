@@ -1,6 +1,6 @@
 # 🎵 MusicGPT - Music Generation Simulation
 
-A sophisticated music generation simulation UI built with Next.js 16, featuring real-time WebSocket synchronization, animated components, and a modern dark theme design.
+A sophisticated music generation simulation UI built with Next.js 16, featuring real-time WebSocket synchronization, animated components, mobile-first responsive design, and a modern dark theme.
 
 ## 📋 Table of Contents
 
@@ -22,22 +22,26 @@ MusicGPT is a simulation of an AI-powered music generation platform. Users can i
 
 - **Real-time Progress Updates**: WebSocket-powered live progress tracking
 - **Animated UI Components**: Smooth transitions using Framer Motion
+- **Mobile-First Responsive Design**: Fully responsive layout with mobile header and collapsible sidebar
+- **Advanced Prompt Controls**: Attachment options, advanced settings, lyrics editor with AI generate/improve
 - **State Synchronization**: Profile popup and main content stay in sync
+- **Infinite Scroll Pagination**: Load more generations with skeleton loading states
 - **Multiple Generation States**: Empty, Generating, Completed, and Failed states
 - **Floating Music Player**: Persistent audio player for completed tracks
+- **Multi-language Support**: Language selector with flag icons
 
 ## 🛠 Tech Stack
 
 | Technology        | Version | Purpose                         |
 | ----------------- | ------- | ------------------------------- |
 | **Next.js**       | 16.1.1  | React framework with App Router |
-| **React**         | 19.x    | UI library                      |
+| **React**         | 19.2.3  | UI library                      |
 | **TypeScript**    | 5.x     | Type safety                     |
-| **Tailwind CSS**  | 4.x     | Utility-first styling           |
-| **Framer Motion** | 12.x    | Declarative animations          |
-| **Zustand**       | 5.x     | State management                |
-| **Socket.io**     | 4.x     | Real-time communication         |
-| **Lucide React**  | 0.513.x | Icon library                    |
+| **Tailwind CSS**  | 4.x     | Utility-first styling (v4 beta) |
+| **Framer Motion** | 12.25.0 | Declarative animations          |
+| **Zustand**       | 5.0.9   | State management                |
+| **Socket.io**     | 4.8.3   | Real-time communication         |
+| **Lucide React**  | 0.562.0 | Icon library                    |
 
 ## 🏗 Architecture
 
@@ -53,6 +57,8 @@ The application uses **Zustand** with `subscribeWithSelector` middleware for fin
 │  ├── generations: Generation[]                              │
 │  ├── user: UserProfile                                      │
 │  ├── isProfileOpen: boolean                                 │
+│  ├── isSidebarOpen: boolean                                 │
+│  ├── isMobileProfileOpen: boolean                           │
 │  └── currentlyPlaying: string | null                        │
 ├─────────────────────────────────────────────────────────────┤
 │  Actions:                                                   │
@@ -60,12 +66,17 @@ The application uses **Zustand** with `subscribeWithSelector` middleware for fin
 │  ├── updateProgress(id, progress, message)                  │
 │  ├── completeGeneration(id, result)                         │
 │  ├── failGeneration(id, error)                              │
-│  └── setCurrentlyPlaying(id)                                │
+│  ├── setCurrentlyPlaying(id)                                │
+│  ├── toggleSidebar()                                        │
+│  ├── setMobileProfileOpen(open)                             │
+│  └── markGenerationSeen(id)                                 │
 ├─────────────────────────────────────────────────────────────┤
 │  Selectors (Optimized Re-renders):                          │
+│  ├── useUser()                                              │
+│  ├── useGenerations()                                       │
+│  ├── useIsSidebarOpen()                                     │
 │  ├── useGeneratingCount()                                   │
-│  ├── useCompletedGenerations()                              │
-│  └── useFailedGenerations()                                 │
+│  └── useCurrentlyPlaying()                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -95,13 +106,23 @@ The application uses **Zustand** with `subscribeWithSelector` middleware for fin
 App (layout.tsx)
 ├── SocketProvider (WebSocket context)
 │   └── page.tsx
+│       ├── MobileHeader (Mobile navigation)
 │       ├── Sidebar
+│       │   ├── LanguageDropdown
 │       │   └── ProfilePopup (Generation list mirror)
-│       ├── PromptBox (Animated input)
+│       ├── PromptBox (Animated input with toolbar)
+│       │   ├── AttachmentDropdown
+│       │   ├── AdvancedSettingsDropdown
+│       │   ├── LyricsSection
+│       │   │   ├── GeneratePopup (AI lyrics generation)
+│       │   │   └── ImprovePopup (AI lyrics improvement)
+│       │   └── InstrumentalToggle
 │       └── RecentGenerations
 │           ├── EmptyState
+│           ├── ActiveGenerations (In Progress section)
+│           ├── CompletedGenerations (with infinite scroll)
 │           └── GenerationCard[]
-│               ├── GeneratingState (with CircularProgress)
+│               ├── GeneratingState (with gradient progress)
 │               ├── CompletedState (with play overlay)
 │               └── FailedState (with error display)
 └── MusicPlayer (Floating, persistent)
@@ -109,35 +130,47 @@ App (layout.tsx)
 
 ## ✨ Features
 
-### 1. Animated Prompt Box
+### 1. Advanced Prompt Box
 
 - **Cycling Placeholders**: Typewriter effect with rotating prompts
-- **Animated Border**: Gradient flow animation on focus
+- **Animated Glow Border**: Multi-frame image-based glow animation
 - **Auto-resize**: Textarea grows with content
 - **Credit Check**: Validates user has sufficient credits
+- **Attachment Menu**: Upload file, Record audio, YouTube link options
+- **Advanced Settings**:
+  - Song title input
+  - Prompt intensity slider (custom IntensitySlider component)
+  - Lyrics intensity slider
+  - Pro features badge
+- **Instrumental Toggle**: Toggle button for instrumental-only mode
+- **Expandable Lyrics Section**:
+  - Collapsible lyrics textarea
+  - AI Generate button with floating prompt input
+  - AI Improve button (appears when lyrics entered)
+  - Click-outside-to-dismiss floating inputs
 
 ### 2. Real-time Generation Progress
 
-- **Live Progress Bar**: Smooth progress updates
+- **Live Progress Bar**: Smooth gradient progress updates
 - **Status Messages**: Dynamic generation phase messages
-- **Circular Progress**: Visual indicator in profile popup
+- **Gradient Progress Component**: Custom GradientProgress component
 - **Shimmer Effects**: Loading animations on cards
 
 ### 3. Profile Popup Synchronization
 
-- **Badge Counter**: Shows active generation count
+- **Badge Counter**: Shows active generation count (green badge)
 - **Live Updates**: Synced with main content area
 - **State Display**: Shows all generation states
 - **Click Outside to Close**: User-friendly interaction
 
 ### 4. Generation States
 
-| State          | UI Elements                                  |
-| -------------- | -------------------------------------------- |
-| **Empty**      | Illustration, helper text, CTA button        |
-| **Generating** | Progress bar, shimmer effect, status message |
-| **Completed**  | Cover image, play button, version count      |
-| **Failed**     | Error icon, error message, retry button      |
+| State          | UI Elements                             |
+| -------------- | --------------------------------------- |
+| **Empty**      | Illustration, helper text, CTA button   |
+| **Generating** | Gradient progress bar, shimmer, status  |
+| **Completed**  | Cover image, play button, version count |
+| **Failed**     | Error icon, error message, retry button |
 
 ### 5. Floating Music Player
 
@@ -145,6 +178,27 @@ App (layout.tsx)
 - **Track Info**: Title, prompt, and version display
 - **Playback Controls**: Play/pause, seek, volume
 - **Progress Display**: Duration and current time
+
+### 6. Mobile Responsive Design
+
+- **Mobile Header**: Sticky header with hamburger menu and profile avatar
+- **Notification Badge**: Shows active generation count on mobile
+- **Collapsible Sidebar**: Off-canvas navigation on mobile
+- **Touch-friendly UI**: Appropriately sized touch targets
+- **Responsive Spacing**: Adjusted padding/margins for mobile
+
+### 7. Infinite Scroll & Pagination
+
+- **Intersection Observer**: Automatic loading when scrolling
+- **Skeleton Loading**: Animated skeleton cards during load
+- **Separate Sections**: Active generations vs completed generations
+- **Load More**: Simulated network delay for realistic UX
+
+### 8. Multi-language Support
+
+- **Language Dropdown**: In sidebar footer
+- **Flag Icons**: SVG country flags (USA, Spain, Germany, Korea)
+- **Animated Dropdown**: Smooth open/close transitions
 
 ## 🚀 Getting Started
 
@@ -196,42 +250,69 @@ musicgpt-simulation/
 │   │   ├── layout.tsx           # Root layout with providers
 │   │   ├── page.tsx             # Main create page
 │   │   └── api/
+│   │       ├── generate/
+│   │       │   └── route.ts     # Generation API endpoint
 │   │       └── socket/
 │   │           └── route.ts     # WebSocket API route
 │   │
 │   ├── components/
+│   │   ├── Providers.tsx        # App-level providers
+│   │   │
 │   │   ├── create/
-│   │   │   ├── PromptBox.tsx    # Animated prompt input
-│   │   │   ├── RecentGenerations.tsx
-│   │   │   ├── GenerationCard.tsx
-│   │   │   └── EmptyState.tsx
+│   │   │   ├── index.ts         # Barrel exports
+│   │   │   ├── PromptBox.tsx    # Main prompt input with all controls
+│   │   │   │   ├── AttachmentDropdown
+│   │   │   │   ├── AdvancedSettingsDropdown
+│   │   │   │   ├── IntensitySlider (inline component)
+│   │   │   │   ├── LyricsSection
+│   │   │   │   └── ToolbarButton (inline component)
+│   │   │   ├── RecentGenerations.tsx  # Generation list with infinite scroll
+│   │   │   ├── GenerationCard.tsx     # Individual generation card
+│   │   │   └── EmptyState.tsx         # Empty state illustration
 │   │   │
 │   │   ├── layout/
-│   │   │   ├── Sidebar.tsx      # Navigation sidebar
+│   │   │   ├── index.ts         # Barrel exports
+│   │   │   ├── Sidebar.tsx      # Navigation sidebar with LanguageDropdown
+│   │   │   ├── MobileHeader.tsx # Mobile sticky header
 │   │   │   └── ProfilePopup.tsx # User dropdown with generations
 │   │   │
 │   │   ├── player/
+│   │   │   ├── index.ts         # Barrel exports
 │   │   │   └── MusicPlayer.tsx  # Floating audio player
 │   │   │
 │   │   └── ui/
-│   │       └── CircularProgress.tsx
+│   │       ├── index.ts         # Barrel exports
+│   │       └── GradientProgress.tsx  # Custom gradient progress bar
 │   │
 │   ├── hooks/
+│   │   ├── index.ts             # Barrel exports
 │   │   └── useSocket.tsx        # WebSocket provider & hook
 │   │
 │   ├── lib/
-│   │   └── utils.ts             # Utilities, constants, easing
+│   │   └── utils.ts             # Utilities, constants, easing functions
 │   │
 │   ├── store/
+│   │   ├── index.ts             # Barrel exports with selectors
 │   │   └── generationStore.ts   # Zustand store
 │   │
 │   └── types/
 │       └── index.ts             # TypeScript definitions
 │
+├── public/
+│   ├── logo.svg                 # App logo
+│   ├── glow-1.png ... glow-4.png  # Animated glow frames
+│   ├── flag-usa.svg             # Language flags
+│   ├── flag-spain.svg
+│   ├── flag-germany.svg
+│   ├── flag-korea.svg
+│   └── album-art.jpg            # Sample album art
+│
 ├── server.js                    # Custom WebSocket server
 ├── package.json
-├── tailwind.config.ts
 ├── tsconfig.json
+├── next.config.ts
+├── postcss.config.mjs
+├── eslint.config.mjs
 └── README.md
 ```
 
@@ -408,18 +489,56 @@ const PROGRESS_MESSAGES = [
 
 ## 📝 Testing Checklist
 
-- [x] Prompt box shows cycling placeholder text
-- [x] Animated border activates on focus
+### Core Features
+
+- [x] Prompt box shows cycling placeholder text with typewriter effect
+- [x] Animated glow border using multi-frame image animation
 - [x] Generation creates new card in "Generating" state
-- [x] Progress updates in real-time
+- [x] Progress updates in real-time with gradient progress bar
 - [x] Profile popup shows generation progress
-- [x] Badge shows count of active generations
+- [x] Badge shows count of active generations (green badge)
 - [x] Completed generations show cover and play button
 - [x] Failed generations show error message
 - [x] Music player appears when track is played
 - [x] Empty state shows when no generations exist
 - [x] Click outside closes profile popup
 - [x] All animations are smooth (60fps)
+
+### Prompt Box Controls
+
+- [x] Attachment dropdown with Upload, Record, YouTube options
+- [x] Advanced settings dropdown with Pro banner
+- [x] Title input field in advanced settings
+- [x] Prompt intensity slider with gradient bars and draggable thumb
+- [x] Lyrics intensity slider
+- [x] Instrumental toggle button with text
+- [x] Lyrics button toggles expandable lyrics section
+- [x] Lyrics section has Generate button with floating input
+- [x] Improve button appears when lyrics has content
+- [x] Floating inputs dismiss on click outside
+- [x] Arrow submit button appears in floating inputs when text entered
+
+### Mobile Responsiveness
+
+- [x] Mobile header visible on small screens
+- [x] Sidebar collapses on mobile
+- [x] Notification badge on mobile profile avatar
+- [x] Touch-friendly button sizes
+- [x] Responsive padding and spacing
+- [x] Glow effect adjusts for mobile (smaller inset)
+
+### Infinite Scroll & Pagination
+
+- [x] Skeleton loading cards during load
+- [x] Intersection observer triggers load more
+- [x] Separate sections for active vs completed
+- [x] Simulated network delay for realistic UX
+
+### Language & Internationalization
+
+- [x] Language dropdown in sidebar footer
+- [x] SVG flag icons for each language
+- [x] Dropdown animates open/close
 
 ## 🔧 Troubleshooting
 
@@ -429,11 +548,30 @@ These are expected when running without the WebSocket server. The app falls back
 
 ### Image 404 Errors
 
-If using external images, ensure they're in the `/public/images/` directory or use gradient backgrounds (current implementation).
+If using external images, ensure they're in the `/public/` directory or use gradient backgrounds (current implementation).
 
 ### Hydration Mismatches
 
 The app uses `use client` directives appropriately. If issues occur, ensure animations only run on client mount.
+
+### Tailwind v4 Lint Warnings
+
+Some lint warnings about class names (e.g., `z-[100]` → `z-100`) are suggestions for Tailwind v4 syntax. These don't affect functionality.
+
+## 🎯 Technical Highlights
+
+This project demonstrates proficiency in:
+
+1. **Modern React Patterns**: Hooks, context, custom hooks, compound components
+2. **State Management**: Zustand with selectors for optimized re-renders
+3. **Animation Excellence**: Framer Motion for declarative, performant animations
+4. **Responsive Design**: Mobile-first approach with adaptive layouts
+5. **Real-time Features**: WebSocket integration with graceful fallbacks
+6. **UX Best Practices**: Loading states, skeleton screens, infinite scroll
+7. **TypeScript**: Full type safety across components and state
+8. **CSS Architecture**: Tailwind v4 with CSS variables and custom keyframes
+9. **Component Design**: Reusable, composable UI components
+10. **Accessibility**: Proper button roles, click-outside handling, keyboard support
 
 ## 📄 License
 
@@ -441,4 +579,4 @@ MIT License - Feel free to use this code for your projects!
 
 ---
 
-Built with ❤️ using Next.js, Tailwind CSS, and Framer Motion
+Built with ❤️ using Next.js 16, React 19, Tailwind CSS v4, and Framer Motion
