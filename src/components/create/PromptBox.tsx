@@ -24,6 +24,65 @@ import { cn, PLACEHOLDER_PROMPTS, EASING, DURATION } from '@/lib/utils';
 import { useSocket } from '@/hooks/useSocket';
 import { useGenerationStore } from '@/store';
 
+export const glowGroups: string[][] = [
+  // ORANGE → BLACK
+  [
+    'bg-linear-to-r from-[#FF7B16] to-black/55 mix-blend-screen opacity-55',
+    'bg-linear-to-r from-[#FF7B16] to-black/55 blur-lg',
+    'bg-linear-to-r from-[#FF7B16] to-black/55 mix-blend-screen opacity-55',
+  ],
+
+  // PURPLE (middle)
+  [
+    'bg-linear-to-r from-black/55 via-[#EA2EFF] to-black/55 opacity-55',
+    'bg-linear-to-r from-black/55 via-[#EA2EFF] to-black/55',
+    'bg-linear-to-r from-black/55 via-[#EA2EFF] to-black/55 blur-lg',
+  ],
+
+  // BLACK → ORANGE
+  [
+    'bg-linear-to-r from-black/55 to-[#FF7B16] mix-blend-screen opacity-55',
+    'bg-linear-to-r from-black/55 to-[#FF7B16] mix-blend-screen opacity-55',
+    'bg-linear-to-r from-black/55 to-[#FF7B16] blur-lg',
+  ],
+];
+
+interface GlowGroupProps {
+  layers: string[];
+  delay: number;
+}
+
+export const GlowGroup: React.FC<GlowGroupProps> = ({ layers, delay }) => {
+  return (
+    <motion.div
+      className='absolute inset-0 pointer-events-none'
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: [0, 1, 1, 0],
+      }}
+      transition={{
+        duration: 2.3,
+        delay,
+        ease: 'easeInOut',
+        repeat: Infinity,
+        times: [0, 0.25, 0.5, 1],
+      }}
+    >
+      {layers.map((classes, i) => (
+        <div
+          key={i}
+          className={`
+            absolute -inset-1
+            rounded-3xl md:rounded-[34px]
+            h-[calc(100%+7px)]
+
+            ${classes}
+          `}
+        />
+      ))}
+    </motion.div>
+  );
+};
 export function PromptBox() {
   const [prompt, setPrompt] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -34,6 +93,7 @@ export function PromptBox() {
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [songTitle, setSongTitle] = useState('');
+  const [activeGroup, setActiveGroup] = useState(0);
   const [promptIntensity, setPromptIntensity] = useState(85);
   const [lyricsIntensity, setLyricsIntensity] = useState(85);
   const [isInstrumental, setIsInstrumental] = useState(false);
@@ -53,6 +113,14 @@ export function PromptBox() {
 
   const user = useGenerationStore((state) => state.user);
   const hasCredits = user.credits > 0;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveGroup((prev) => (prev + 1) % glowGroups.length);
+    }, 2000); // change group every 2s
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Close attach menu when clicking outside
   useEffect(() => {
@@ -117,14 +185,14 @@ export function PromptBox() {
           } else {
             // Move to next placeholder
             setPlaceholderIndex(
-              (prev) => (prev + 1) % PLACEHOLDER_PROMPTS.length
+              (prev) => (prev + 1) % PLACEHOLDER_PROMPTS.length,
             );
             isDeleting = false;
             setIsTyping(false);
           }
         }
       },
-      isDeleting ? 30 : 50
+      isDeleting ? 30 : 50,
     );
 
     return () => clearInterval(typeInterval);
@@ -136,7 +204,7 @@ export function PromptBox() {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(
         textareaRef.current.scrollHeight,
-        150
+        150,
       )}px`;
     }
   }, [prompt]);
@@ -166,7 +234,7 @@ export function PromptBox() {
   };
 
   return (
-    <div className='w-full max-w-3xl mx-auto px-2 md:px-0'>
+    <div className='w-full max-w-4xl mx-auto px-2 md:px-0'>
       {/* Main Container with Animated Border */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -174,13 +242,9 @@ export function PromptBox() {
         transition={{ duration: DURATION.slow, ease: EASING.decelerate }}
         className='relative'
       >
-        {/* Image-based glow animation frames */}
-        <div className='glow-image-container'>
-          <div className='glow-image-frame glow-frame-1' />
-          <div className='glow-image-frame glow-frame-2' />
-          <div className='glow-image-frame glow-frame-3' />
-        </div>
-
+        <GlowGroup layers={glowGroups[0]} delay={1} />
+        <GlowGroup layers={glowGroups[1]} delay={1.5} />
+        <GlowGroup layers={glowGroups[2]} delay={2} />
         {/* Inner Container */}
         <div className='relative bg-[#1D2125] rounded-3xl md:rounded-4xl border border-[#262626]'>
           {/* Prompt Textarea */}
@@ -371,7 +435,7 @@ export function PromptBox() {
                     'w-10 h-10 flex items-center justify-center transition-all border border-white/30 rounded-full',
                     isAttachMenuOpen
                       ? 'text-white bg-[#1F1F1F]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
                   )}
                 >
                   <Paperclip className='w-5 h-5' />
@@ -422,7 +486,7 @@ export function PromptBox() {
                     'w-10 h-10 flex items-center justify-center transition-all border border-white/30 rounded-full',
                     isAdvancedOpen
                       ? 'text-white bg-[#1F1F1F]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
                   )}
                   title='Advanced settings'
                 >
@@ -538,7 +602,7 @@ export function PromptBox() {
                   'w-10 h-10 rounded-full flex items-center justify-center transition-all',
                   prompt.trim() && !isSubmitting && hasCredits
                     ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF2C9C] text-white shadow-lg shadow-[#FF6B2C]/30'
-                    : 'bg-[#262626] text-[#525252] cursor-not-allowed'
+                    : 'bg-[#262626] text-[#525252] cursor-not-allowed',
                 )}
               >
                 {isSubmitting ? (
@@ -597,7 +661,7 @@ function ToolbarButton({
         active
           ? 'border-white text-white bg-white/10'
           : 'border-white/30 text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
-        className
+        className,
       )}
     >
       <Icon className='w-5 h-5' />
