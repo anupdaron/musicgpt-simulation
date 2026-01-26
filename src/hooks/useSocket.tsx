@@ -27,6 +27,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const addPairedGenerations = useGenerationStore(
     (state) => state.addPairedGenerations,
   );
+  const addPairedGenerationsFromServer = useGenerationStore(
+    (state) => state.addPairedGenerationsFromServer,
+  );
+  const addInsufficientCreditsGeneration = useGenerationStore(
+    (state) => state.addInsufficientCreditsGeneration,
+  );
   const updateGenerationProgress = useGenerationStore(
     (state) => state.updateGenerationProgress,
   );
@@ -58,16 +64,23 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           setIsConnected(false);
         });
 
-        // Listen for paired generation started
+        // Listen for paired generation started - create cards
         socketRef.current.on(
           'PAIRED_GENERATION_STARTED',
           (data: {
             groupId: string;
+            prompt: string;
             coverImage: string;
             title: string;
             generationIds: string[];
           }) => {
             console.log('Paired generation started:', data.groupId);
+            addPairedGenerationsFromServer(
+              data.groupId,
+              data.prompt,
+              data.title,
+              data.coverImage,
+            );
           },
         );
 
@@ -111,6 +124,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           },
         );
 
+        // Listen for insufficient credits (single card, not paired)
+        socketRef.current.on(
+          'INSUFFICIENT_CREDITS',
+          (data: { prompt: string }) => {
+            addInsufficientCreditsGeneration(data.prompt);
+          },
+        );
+
         socketRef.current.on('CREDITS_UPDATED', (data: { credits: number }) => {
           updateCredits(data.credits);
         });
@@ -129,25 +150,31 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       }
     };
   }, [
+    addPairedGenerationsFromServer,
+    addInsufficientCreditsGeneration,
     updateGenerationProgress,
     completeGeneration,
     failGeneration,
     updateCredits,
   ]);
 
-  // Submit prompt and create paired generations (v1 and v2 cards)
+  // Submit prompt - server decides if paired or insufficient credits
   const submitPrompt = useCallback(
     async (prompt: string) => {
-      const { gen1, gen2, groupId } = addPairedGenerations(prompt);
-
-      // If socket is connected, emit to server
+      // If socket is connected, let server decide the flow
       if (socketRef.current?.connected) {
+        // Don't create cards yet - server will tell us what to create
+        // Either PAIRED_GENERATION_STARTED or INSUFFICIENT_CREDITS
+        const groupId = `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
         socketRef.current.emit('START_PAIRED_GENERATION', {
           groupId,
           prompt,
         });
       } else {
-        // Fallback: Simulate generation locally for both
+        // Fallback: Simulate generation locally
+        const { gen1, gen2 } = addPairedGenerations(prompt);
+
         simulateLocalGeneration(gen1.id, prompt, {
           updateProgress: updateGenerationProgress,
           complete: completeGeneration,

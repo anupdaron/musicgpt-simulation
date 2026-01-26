@@ -36,6 +36,13 @@ interface GenerationState {
     gen2: Generation;
     groupId: string;
   };
+  addPairedGenerationsFromServer: (
+    groupId: string,
+    prompt: string,
+    title: string,
+    coverImage: string,
+  ) => void;
+  addInsufficientCreditsGeneration: (prompt: string) => Generation;
   updateGenerationProgress: (
     id: string,
     progress: number,
@@ -60,6 +67,7 @@ interface GenerationState {
   pauseTrack: () => void;
   togglePlayPause: () => void;
   toggleLike: (id: string) => void;
+  toggleDislike: (id: string) => void;
   markGenerationsAsSeen: () => void;
 
   // User Actions
@@ -77,7 +85,7 @@ const initialUser: UserProfile = {
   id: 'user_1',
   username: 'johnny',
   displayName: 'Johnny',
-  credits: 120,
+  credits: 0,
   maxCredits: 500,
 };
 
@@ -293,6 +301,72 @@ export const useGenerationStore = create<GenerationState>()(
       return { gen1, gen2, groupId };
     },
 
+    // Add paired generations from server response (with specific IDs)
+    addPairedGenerationsFromServer: (
+      groupId: string,
+      prompt: string,
+      title: string,
+      coverImage: string,
+    ) => {
+      const createdAt = new Date();
+
+      const gen1: Generation = {
+        id: `${groupId}_v1`,
+        prompt,
+        title,
+        status: 'pending',
+        progress: 0,
+        createdAt,
+        versions: [],
+        coverImage,
+        groupId,
+        variationNumber: 1,
+        isNew: true,
+      };
+
+      const gen2: Generation = {
+        id: `${groupId}_v2`,
+        prompt,
+        title,
+        status: 'pending',
+        progress: 0,
+        createdAt,
+        versions: [],
+        coverImage,
+        groupId,
+        variationNumber: 2,
+        isNew: true,
+      };
+
+      set((state) => ({
+        generations: [gen1, gen2, ...state.generations],
+        activeGenerationId: gen1.id,
+      }));
+    },
+
+    // Add single insufficient credits generation (already failed)
+    addInsufficientCreditsGeneration: (prompt: string) => {
+      const genId = generateId();
+      const newGeneration: Generation = {
+        id: genId,
+        prompt,
+        title: generateSongTitle(prompt),
+        status: 'failed',
+        progress: 0,
+        createdAt: new Date(),
+        versions: [],
+        coverImage: getRandomCover(),
+        error: 'Not enough credits',
+        isNew: true,
+      };
+
+      set((state) => ({
+        generations: [newGeneration, ...state.generations],
+      }));
+
+      return newGeneration;
+    },
+
     // Update generation progress
     updateGenerationProgress: (
       id: string,
@@ -395,7 +469,19 @@ export const useGenerationStore = create<GenerationState>()(
     toggleLike: (id: string) => {
       set((state) => ({
         generations: state.generations.map((gen) =>
-          gen.id === id ? { ...gen, isLiked: !gen.isLiked } : gen,
+          gen.id === id
+            ? { ...gen, isLiked: !gen.isLiked, isDisliked: false }
+            : gen,
+        ),
+      }));
+    },
+
+    toggleDislike: (id: string) => {
+      set((state) => ({
+        generations: state.generations.map((gen) =>
+          gen.id === id
+            ? { ...gen, isDisliked: !gen.isDisliked, isLiked: false }
+            : gen,
         ),
       }));
     },

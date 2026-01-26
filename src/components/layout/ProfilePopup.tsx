@@ -122,9 +122,6 @@ export function ProfilePopup() {
       g.isNew,
   ).length;
 
-  // Check for insufficient credits
-  const hasInsufficientCredits = user.credits === 0;
-
   // Mark generations as seen when popup is closed
   useEffect(() => {
     if (!isOpen) {
@@ -236,30 +233,6 @@ export function ProfilePopup() {
               onScroll={handleScroll}
               className='max-h-80 overflow-y-auto'
             >
-              {/* Insufficient Credits Warning */}
-              {hasInsufficientCredits && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className='p-3 mx-3 mt-3 rounded-lg bg-[#261A14] border border-[#3D2A1F] flex items-center justify-between'
-                >
-                  <div className='flex items-center gap-2'>
-                    <AlertTriangle className='w-4 h-4 text-[#F59E0B]' />
-                    <div>
-                      <div className='text-sm font-medium text-[#F59E0B]'>
-                        Insufficient credits
-                      </div>
-                      <div className='text-xs text-[#A3A3A3]'>
-                        Your credit balance : 0
-                      </div>
-                    </div>
-                  </div>
-                  <button className='px-3 py-1.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors'>
-                    Top Up
-                  </button>
-                </motion.div>
-              )}
-
               {/* Generation Items */}
               <AnimatePresence mode='popLayout'>
                 {recentGenerations.map((generation, index) => (
@@ -370,7 +343,30 @@ function GenerationItem({ generation, index }: GenerationItemProps) {
       transition={{ delay: index * 0.05 }}
       className='p-3 mx-3 my-2'
     >
-      {status === 'failed' && error?.includes('Server busy') ? (
+      {status === 'failed' && error?.includes('Not enough credits') ? (
+        // Not Enough Credits Error
+        <div className='p-3 rounded-lg bg-[#261A14] border border-[#3D2A1F] flex items-center justify-between'>
+          <div className='flex items-center gap-2'>
+            <AlertTriangle className='w-4 h-4 text-[#F59E0B]' />
+            <div>
+              <div className='text-sm font-medium text-[#F59E0B]'>
+                Insufficient credits
+              </div>
+              <div className='text-xs text-[#A3A3A3]'>
+                Your credit balance : 0
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              // TODO: Open credits/upgrade modal
+            }}
+            className='px-3 py-1.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors'
+          >
+            Top Up
+          </button>
+        </div>
+      ) : status === 'failed' && error?.includes('Server busy') ? (
         // Server Busy Error - Simple inline design
         <div className='p-3 rounded-lg bg-[#1A1A1A]'>
           <div className='flex items-center gap-2'>

@@ -13,6 +13,11 @@ const handle = app.getRequestHandler();
 // Store for active generations
 const activeGenerations = new Map();
 
+// Store for user credits (simulated per socket)
+const userCredits = new Map();
+const INITIAL_CREDITS = 120;
+const CREDITS_PER_GENERATION = 20;
+
 // Helper to generate random values
 const randomBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -32,8 +37,14 @@ const INVALID_PROMPTS = ['', ' ', 'invalid', 'error'];
 const FAILURE_RATE = 0.3; // 30% failure rate
 
 // Simulate a single generation (each card gets its own progress)
-function simulateSingleGeneration(io, socketId, generationId, prompt) {
-  const willFail = Math.random() < FAILURE_RATE; // 70% failure rate
+function simulateSingleGeneration(
+  io,
+  socketId,
+  generationId,
+  prompt,
+  deductCreditsOnComplete = false,
+) {
+  const willFail = Math.random() < FAILURE_RATE; // 30% failure rate
   const failAtStep = willFail ? randomBetween(2, 5) : -1;
   console.log(prompt);
   const invalidPrompt = INVALID_PROMPTS.includes(prompt.toLowerCase());
@@ -78,6 +89,17 @@ function simulateSingleGeneration(io, socketId, generationId, prompt) {
       clearInterval(interval);
       activeGenerations.delete(generationId);
 
+      // Deduct credits on successful completion
+      if (deductCreditsOnComplete) {
+        const currentCredits = userCredits.get(socketId) ?? INITIAL_CREDITS;
+        const newCredits = Math.max(0, currentCredits - CREDITS_PER_GENERATION);
+        userCredits.set(socketId, newCredits);
+
+        io.to(socketId).emit('CREDITS_UPDATED', {
+          credits: newCredits,
+        });
+      }
+
       // Generation completed
       io.to(socketId).emit('GENERATION_COMPLETE', {
         generationId,
@@ -105,6 +127,16 @@ function simulateSingleGeneration(io, socketId, generationId, prompt) {
 
 // Simulate paired generations (v1 and v2 as separate cards)
 function simulatePairedGenerations(io, socketId, groupId, prompt) {
+  const currentCredits = userCredits.get(socketId) ?? INITIAL_CREDITS;
+
+  // Check credits first - if not enough, emit single insufficient credits event
+  if (currentCredits < CREDITS_PER_GENERATION) {
+    io.to(socketId).emit('INSUFFICIENT_CREDITS', {
+      prompt,
+    });
+    return;
+  }
+
   const covers = [
     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -125,27 +157,23 @@ function simulatePairedGenerations(io, socketId, groupId, prompt) {
 
   const coverImage = covers[Math.floor(Math.random() * covers.length)];
 
-  // Emit paired generation started
+  // Emit paired generation started (creates cards on frontend)
   io.to(socketId).emit('PAIRED_GENERATION_STARTED', {
     groupId,
+    prompt,
     coverImage,
     title,
     generationIds: [`${groupId}_v1`, `${groupId}_v2`],
   });
 
-  // Start both generations with slight stagger
+  // Start both generations with slight stagger (credits deducted on completion)
   setTimeout(() => {
-    simulateSingleGeneration(io, socketId, `${groupId}_v1`, prompt);
+    simulateSingleGeneration(io, socketId, `${groupId}_v1`, prompt, true);
   }, 0);
 
   setTimeout(() => {
-    simulateSingleGeneration(io, socketId, `${groupId}_v2`, prompt);
+    simulateSingleGeneration(io, socketId, `${groupId}_v2`, prompt, true);
   }, 300);
-
-  // Emit credits update
-  io.to(socketId).emit('CREDITS_UPDATED', {
-    credits: Math.max(0, 120 - 20), // Deduct 20 credits
-  });
 }
 
 app.prepare().then(() => {
@@ -166,6 +194,10 @@ app.prepare().then(() => {
 
   io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
+
+    // Initialize credits for new user
+    userCredits.set(socket.id, INITIAL_CREDITS);
+    socket.emit('CREDITS_UPDATED', { credits: INITIAL_CREDITS });
 
     // Handle paired generation start (creates v1 and v2 cards)
     socket.on('START_PAIRED_GENERATION', (data) => {
@@ -219,6 +251,9 @@ app.prepare().then(() => {
     // Handle disconnect
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
+
+      // Clean up credits for this socket
+      userCredits.delete(socket.id);
 
       // Clean up any active generations for this socket
       for (const [key, data] of activeGenerations.entries()) {

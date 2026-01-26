@@ -12,12 +12,14 @@ export interface Generation {
   title: string;
   status: GenerationStatus;
   progress: number;
+  statusMessage?: string;
   createdAt: Date;
   completedAt?: Date;
   versions: GenerationVersion[];
   error?: string;
   coverImage?: string;
   isLiked?: boolean;
+  isDisliked?: boolean;
   isNew?: boolean;
   // For paired generations (v1, v2 of same prompt)
   groupId?: string;

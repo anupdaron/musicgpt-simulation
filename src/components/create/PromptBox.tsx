@@ -111,9 +111,6 @@ export function PromptBox() {
   const improveInputRef = useRef<HTMLDivElement>(null);
   const { submitPrompt } = useSocket();
 
-  const user = useGenerationStore((state) => state.user);
-  const hasCredits = user.credits > 0;
-
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveGroup((prev) => (prev + 1) % glowGroups.length);
@@ -210,7 +207,7 @@ export function PromptBox() {
   }, [prompt]);
 
   const handleSubmit = useCallback(async () => {
-    if (!prompt.trim() || isSubmitting || !hasCredits) return;
+    if (!prompt.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -224,7 +221,7 @@ export function PromptBox() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [prompt, isSubmitting, hasCredits, submitPrompt]);
+  }, [prompt, isSubmitting, submitPrompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -589,18 +586,16 @@ export function PromptBox() {
               {/* Submit Button */}
               <motion.button
                 onClick={handleSubmit}
-                disabled={!prompt.trim() || isSubmitting || !hasCredits}
+                disabled={!prompt.trim() || isSubmitting}
                 whileHover={{
-                  scale:
-                    prompt.trim() && !isSubmitting && hasCredits ? 1.05 : 1,
+                  scale: prompt.trim() && !isSubmitting ? 1.05 : 1,
                 }}
                 whileTap={{
-                  scale:
-                    prompt.trim() && !isSubmitting && hasCredits ? 0.95 : 1,
+                  scale: prompt.trim() && !isSubmitting ? 0.95 : 1,
                 }}
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center transition-all',
-                  prompt.trim() && !isSubmitting && hasCredits
+                  prompt.trim() && !isSubmitting
                     ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF2C9C] text-white shadow-lg shadow-[#FF6B2C]/30'
                     : 'bg-[#262626] text-[#525252] cursor-not-allowed',
                 )}

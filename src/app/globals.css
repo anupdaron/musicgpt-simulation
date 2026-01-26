@@ -6,6 +6,18 @@
   }
 }
 
+/* Shine text animation */
+@keyframes shine {
+  0%,
+  2% {
+    background-position-x: -500px;
+  }
+  95%,
+  100% {
+    background-position-x: 500px;
+  }
+}
+
 :root {
   /* Dark Theme Colors */
   --background: #0a0c0d;
@@ -39,6 +51,7 @@
   --primary-400: #303438;
   --primary-800: #5d6165;
   --primary-1000: #777a80;
+  --primary-1100: #c1c2c6;
 }
 
 @layer utilities {
@@ -98,6 +111,25 @@
   }
   .text-primary-1000 {
     color: var(--primary-1000);
+  }
+
+  .gradient-text-animation {
+    background: var(--primary-800)
+      linear-gradient(
+        -40deg,
+        transparent 0%,
+        transparent 30%,
+        var(--primary-1100) 50%,
+        transparent 70%,
+        transparent 100%
+      )
+      no-repeat;
+    background-size: 700px 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: rgba(245, 231, 231, 0.3);
+    animation: shine 3s linear infinite;
   }
 }
 
