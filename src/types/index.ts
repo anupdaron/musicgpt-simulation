@@ -19,15 +19,22 @@ export interface Generation {
   coverImage?: string;
   isLiked?: boolean;
   isNew?: boolean;
+  // For paired generations (v1, v2 of same prompt)
+  groupId?: string;
+  variationNumber?: number; // 1, 2, etc.
 }
 
 // Each generation can have multiple versions (v1, v2, etc.)
 export interface GenerationVersion {
   id: string;
   version: number;
-  duration: number;
+  status?: GenerationStatus;
+  progress?: number;
+  statusMessage?: string;
+  duration?: number;
   audioUrl?: string;
   waveformData?: number[];
+  error?: string;
 }
 
 // User Profile
@@ -46,6 +53,9 @@ export type WSEventType =
   | 'GENERATION_PROGRESS'
   | 'GENERATION_COMPLETE'
   | 'GENERATION_FAILED'
+  | 'VARIATION_PROGRESS'
+  | 'VARIATION_COMPLETE'
+  | 'VARIATION_FAILED'
   | 'CREDITS_UPDATED';
 
 export interface WSEvent {

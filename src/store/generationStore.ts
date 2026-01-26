@@ -31,16 +31,20 @@ interface GenerationState {
 
   // Actions
   addGeneration: (prompt: string) => Generation;
+  addPairedGenerations: (prompt: string) => {
+    gen1: Generation;
+    gen2: Generation;
+    groupId: string;
+  };
   updateGenerationProgress: (
     id: string,
     progress: number,
-    message?: string
+    message?: string,
   ) => void;
   completeGeneration: (
     id: string,
-    versions: GenerationVersion[],
-    coverImage: string,
-    title: string
+    duration: number,
+    waveformData: number[],
   ) => void;
   failGeneration: (id: string, error: string) => void;
   removeGeneration: (id: string) => void;
@@ -80,7 +84,7 @@ const initialUser: UserProfile = {
 // Sample initial generations for demonstration
 const initialGenerations: Generation[] = [
   {
-    id: 'gen_sample_1',
+    id: 'gen_sample_1a',
     prompt:
       'Create a pop-rock song about old times, nostalgic opera theme style, guitar solo like slash',
     title: 'Crimson Echoes',
@@ -89,11 +93,34 @@ const initialGenerations: Generation[] = [
     createdAt: new Date(Date.now() - 3600000),
     completedAt: new Date(Date.now() - 3500000),
     coverImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    groupId: 'group_1',
+    variationNumber: 1,
     versions: [
       {
         id: 'v1_1',
         version: 1,
         duration: 245,
+        waveformData: generateWaveformData(),
+      },
+    ],
+  },
+  {
+    id: 'gen_sample_1b',
+    prompt:
+      'Create a pop-rock song about old times, nostalgic opera theme style, guitar solo like slash',
+    title: 'Crimson Echoes',
+    status: 'completed',
+    progress: 100,
+    createdAt: new Date(Date.now() - 3600000),
+    completedAt: new Date(Date.now() - 3480000),
+    coverImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    groupId: 'group_1',
+    variationNumber: 2,
+    versions: [
+      {
+        id: 'v1_2',
+        version: 1,
+        duration: 238,
         waveformData: generateWaveformData(),
       },
     ],
@@ -188,114 +215,6 @@ const initialGenerations: Generation[] = [
       },
     ],
   },
-  {
-    id: 'gen_sample_7',
-    prompt: 'Heavy metal anthem with double bass drums',
-    title: 'Steel Thunder',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 25200000),
-    completedAt: new Date(Date.now() - 25100000),
-    coverImage: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
-    versions: [
-      {
-        id: 'v7_1',
-        version: 1,
-        duration: 320,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
-  {
-    id: 'gen_sample_8',
-    prompt: 'Smooth R&B love song with soulful vocals',
-    title: 'Velvet Touch',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 28800000),
-    completedAt: new Date(Date.now() - 28700000),
-    coverImage: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
-    versions: [
-      {
-        id: 'v8_1',
-        version: 1,
-        duration: 256,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
-  {
-    id: 'gen_sample_9',
-    prompt: 'Reggae summer vibes with steel drums',
-    title: 'Island Breeze',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 32400000),
-    completedAt: new Date(Date.now() - 32300000),
-    coverImage: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    versions: [
-      {
-        id: 'v9_1',
-        version: 1,
-        duration: 234,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
-  {
-    id: 'gen_sample_10',
-    prompt: 'Cinematic ambient soundscape for meditation',
-    title: 'Ethereal Waves',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 36000000),
-    completedAt: new Date(Date.now() - 35900000),
-    coverImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    versions: [
-      {
-        id: 'v10_1',
-        version: 1,
-        duration: 420,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
-  {
-    id: 'gen_sample_11',
-    prompt: 'Funky disco groove with slap bass',
-    title: 'Disco Inferno',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 39600000),
-    completedAt: new Date(Date.now() - 39500000),
-    coverImage: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-    versions: [
-      {
-        id: 'v11_1',
-        version: 1,
-        duration: 278,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
-  {
-    id: 'gen_sample_12',
-    prompt: 'Classical piano sonata inspired by Chopin',
-    title: 'Moonlit Sonata',
-    status: 'completed',
-    progress: 100,
-    createdAt: new Date(Date.now() - 43200000),
-    completedAt: new Date(Date.now() - 43100000),
-    coverImage: 'linear-gradient(135deg, #2c3e50 0%, #bdc3c7 100%)',
-    versions: [
-      {
-        id: 'v12_1',
-        version: 1,
-        duration: 365,
-        waveformData: generateWaveformData(),
-      },
-    ],
-  },
 ];
 
 export const useGenerationStore = create<GenerationState>()(
@@ -311,10 +230,11 @@ export const useGenerationStore = create<GenerationState>()(
     currentlyPlayingId: null,
     isPlaying: false,
 
-    // Add new generation (returns the created generation)
+    // Add single generation (for backwards compatibility)
     addGeneration: (prompt: string) => {
+      const genId = generateId();
       const newGeneration: Generation = {
-        id: generateId(),
+        id: genId,
         prompt,
         title: generateSongTitle(prompt),
         status: 'pending',
@@ -332,11 +252,52 @@ export const useGenerationStore = create<GenerationState>()(
       return newGeneration;
     },
 
+    // Add two paired generations (v1 and v2 as separate cards)
+    addPairedGenerations: (prompt: string) => {
+      const groupId = generateId();
+      const title = generateSongTitle(prompt);
+      const coverImage = getRandomCover();
+      const createdAt = new Date();
+
+      const gen1: Generation = {
+        id: `${groupId}_v1`,
+        prompt,
+        title,
+        status: 'pending',
+        progress: 0,
+        createdAt,
+        versions: [],
+        coverImage,
+        groupId,
+        variationNumber: 1,
+      };
+
+      const gen2: Generation = {
+        id: `${groupId}_v2`,
+        prompt,
+        title,
+        status: 'pending',
+        progress: 0,
+        createdAt,
+        versions: [],
+        coverImage,
+        groupId,
+        variationNumber: 2,
+      };
+
+      set((state) => ({
+        generations: [gen1, gen2, ...state.generations],
+        activeGenerationId: gen1.id,
+      }));
+
+      return { gen1, gen2, groupId };
+    },
+
     // Update generation progress
     updateGenerationProgress: (
       id: string,
       progress: number,
-      message?: string
+      message?: string,
     ) => {
       set((state) => ({
         generations: state.generations.map((gen) =>
@@ -347,7 +308,7 @@ export const useGenerationStore = create<GenerationState>()(
                 progress,
                 ...(message && { statusMessage: message }),
               }
-            : gen
+            : gen,
         ),
       }));
     },
@@ -355,9 +316,8 @@ export const useGenerationStore = create<GenerationState>()(
     // Complete generation
     completeGeneration: (
       id: string,
-      versions: GenerationVersion[],
-      coverImage: string,
-      title: string
+      duration: number,
+      waveformData: number[],
     ) => {
       set((state) => ({
         generations: state.generations.map((gen) =>
@@ -367,12 +327,17 @@ export const useGenerationStore = create<GenerationState>()(
                 status: 'completed' as GenerationStatus,
                 progress: 100,
                 completedAt: new Date(),
-                versions,
-                coverImage,
-                title,
+                versions: [
+                  {
+                    id: `${id}_audio`,
+                    version: 1,
+                    duration,
+                    waveformData,
+                  },
+                ],
                 isNew: true,
               }
-            : gen
+            : gen,
         ),
       }));
     },
@@ -383,7 +348,7 @@ export const useGenerationStore = create<GenerationState>()(
         generations: state.generations.map((gen) =>
           gen.id === id
             ? { ...gen, status: 'failed' as GenerationStatus, error }
-            : gen
+            : gen,
         ),
       }));
     },
@@ -430,7 +395,7 @@ export const useGenerationStore = create<GenerationState>()(
     toggleLike: (id: string) => {
       set((state) => ({
         generations: state.generations.map((gen) =>
-          gen.id === id ? { ...gen, isLiked: !gen.isLiked } : gen
+          gen.id === id ? { ...gen, isLiked: !gen.isLiked } : gen,
         ),
       }));
     },
@@ -438,7 +403,7 @@ export const useGenerationStore = create<GenerationState>()(
     markGenerationsAsSeen: () => {
       set((state) => ({
         generations: state.generations.map((gen) =>
-          gen.isNew ? { ...gen, isNew: false } : gen
+          gen.isNew ? { ...gen, isNew: false } : gen,
         ),
       }));
     },
@@ -468,7 +433,7 @@ export const useGenerationStore = create<GenerationState>()(
       return get().generations.filter((gen) => gen.status === 'generating')
         .length;
     },
-  }))
+  })),
 );
 
 // Selector hooks for optimized re-renders

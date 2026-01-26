@@ -40,16 +40,18 @@ export function GenerationCard({
     error,
     isLiked,
     isNew,
+    variationNumber,
+    groupId,
   } = generation;
   const playTrack = useGenerationStore((state) => state.playTrack);
   const toggleLike = useGenerationStore((state) => state.toggleLike);
   const currentlyPlayingId = useGenerationStore(
-    (state) => state.currentlyPlayingId
+    (state) => state.currentlyPlayingId,
   );
   const isPlaying = useGenerationStore((state) => state.isPlaying);
   const togglePlayPause = useGenerationStore((state) => state.togglePlayPause);
   const removeGeneration = useGenerationStore(
-    (state) => state.removeGeneration
+    (state) => state.removeGeneration,
   );
   const { retryGeneration } = useSocket();
 
@@ -93,39 +95,19 @@ export function GenerationCard({
 
           {/* Content */}
           <div className='flex-1 min-w-0'>
-            <p className='text-sm text-white font-medium truncate'>{title}</p>
+            <div className='flex items-center gap-2'>
+              <p className='text-sm text-white font-medium truncate'>{title}</p>
+            </div>
             <p className='text-xs text-[#737373] truncate mt-1'>{prompt}</p>
             <div className='flex items-center gap-2 mt-2'>
               <Clock className='w-3 h-3 text-[#525252]' />
               <span className='text-xs text-[#525252]'>
-                {status === 'pending' ? 'Waiting in queue...' : 'Generating...'}
+                {status === 'pending'
+                  ? 'Waiting in queue...'
+                  : `${progress}% - Generating...`}
               </span>
             </div>
           </div>
-
-          {/* Version badges if any */}
-          {versions.length > 0 && (
-            <div className='flex gap-1'>
-              {versions.map((v) => (
-                <span
-                  key={v.id}
-                  className='px-2 py-1 rounded bg-[#262626] text-xs text-[#737373]'
-                >
-                  v{v.version}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Progress bar at bottom */}
-        <div className='absolute bottom-0 left-0 right-0 h-1 bg-[#262626]'>
-          <motion.div
-            className='h-full bg-gradient-to-r from-[#FF6B2C] to-[#FF2C9C]'
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
         </div>
       </motion.div>
     );
@@ -148,9 +130,11 @@ export function GenerationCard({
 
           {/* Content */}
           <div className='flex-1 min-w-0'>
-            <p className='text-sm text-[#EF4444] font-medium'>
-              Generation Failed
-            </p>
+            <div className='flex items-center gap-2'>
+              <p className='text-sm text-[#EF4444] font-medium'>
+                Generation Failed
+              </p>
+            </div>
             <p className='text-xs text-[#A3A3A3] truncate mt-1'>{prompt}</p>
             <p className='text-xs text-[#737373] mt-2'>
               {error || 'An error occurred while generating your track.'}
@@ -207,7 +191,7 @@ export function GenerationCard({
               'absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity',
               isCurrentlyPlaying
                 ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100'
+                : 'opacity-0 group-hover:opacity-100',
             )}
           >
             {isCurrentlyPlaying ? (
@@ -240,30 +224,10 @@ export function GenerationCard({
         <div className='flex-1 min-w-0'>
           <div className='flex items-center gap-2'>
             <h3 className='text-sm text-white font-medium truncate'>{title}</h3>
+
             <Check className='w-4 h-4 text-[#22C55E] flex-shrink-0' />
           </div>
           <p className='text-xs text-[#737373] truncate mt-1'>{prompt}</p>
-        </div>
-
-        {/* Version Buttons - Hidden on mobile */}
-        <div className='hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-          {versions.map((version) => (
-            <motion.button
-              key={version.id}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                playTrack(id, version.id);
-              }}
-              className={cn(
-                'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
-                'bg-[#262626] hover:bg-[#333333] text-[#A3A3A3] hover:text-white'
-              )}
-            >
-              v{version.version}
-            </motion.button>
-          ))}
         </div>
 
         {/* Thumbs Up/Down Buttons - Hidden on mobile */}
@@ -275,7 +239,7 @@ export function GenerationCard({
             }}
             className={cn(
               'p-2 rounded-lg transition-all hover:bg-[#262626]',
-              isLiked ? 'text-[#22C55E]' : 'text-[#525252] hover:text-white'
+              isLiked ? 'text-[#22C55E]' : 'text-[#525252] hover:text-white',
             )}
           >
             <ThumbsUp className={cn('w-4 h-4', isLiked && 'fill-current')} />
@@ -289,6 +253,19 @@ export function GenerationCard({
           >
             <ThumbsDown className='w-4 h-4' />
           </button>
+        </div>
+        {/* Version Badge - Hidden on mobile */}
+        <div className='hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={cn(
+              'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
+              'bg-[#262626] hover:bg-[#333333] text-[#A3A3A3] hover:text-white',
+            )}
+          >
+            v{variationNumber}
+          </motion.div>
         </div>
 
         {/* More Options - Always visible on mobile */}

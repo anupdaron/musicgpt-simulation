@@ -10,8 +10,7 @@ import React, {
 } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useGenerationStore } from '@/store';
-import type { GenerationVersion } from '@/types';
-import { generateWaveformData, getRandomCover } from '@/lib/utils';
+import { generateWaveformData } from '@/lib/utils';
 
 interface SocketContextType {
   isConnected: boolean;
@@ -25,12 +24,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  const addGeneration = useGenerationStore((state) => state.addGeneration);
+  const addPairedGenerations = useGenerationStore(
+    (state) => state.addPairedGenerations,
+  );
   const updateGenerationProgress = useGenerationStore(
-    (state) => state.updateGenerationProgress
+    (state) => state.updateGenerationProgress,
   );
   const completeGeneration = useGenerationStore(
-    (state) => state.completeGeneration
+    (state) => state.completeGeneration,
   );
   const failGeneration = useGenerationStore((state) => state.failGeneration);
   const updateCredits = useGenerationStore((state) => state.updateCredits);
@@ -57,14 +58,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           setIsConnected(false);
         });
 
-        // Listen for generation events
+        // Listen for paired generation started
         socketRef.current.on(
-          'GENERATION_STARTED',
-          (data: { generationId: string }) => {
-            console.log('Generation started:', data.generationId);
-          }
+          'PAIRED_GENERATION_STARTED',
+          (data: {
+            groupId: string;
+            coverImage: string;
+            title: string;
+            generationIds: string[];
+          }) => {
+            console.log('Paired generation started:', data.groupId);
+          },
         );
 
+        // Listen for individual generation progress
         socketRef.current.on(
           'GENERATION_PROGRESS',
           (data: {
@@ -75,33 +82,33 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             updateGenerationProgress(
               data.generationId,
               data.progress,
-              data.message
+              data.message,
             );
-          }
+          },
         );
 
+        // Listen for individual generation complete
         socketRef.current.on(
           'GENERATION_COMPLETE',
           (data: {
             generationId: string;
-            versions: GenerationVersion[];
-            coverImage: string;
-            title: string;
+            duration: number;
+            waveformData: number[];
           }) => {
             completeGeneration(
               data.generationId,
-              data.versions,
-              data.coverImage,
-              data.title
+              data.duration,
+              data.waveformData,
             );
-          }
+          },
         );
 
+        // Listen for individual generation failed
         socketRef.current.on(
           'GENERATION_FAILED',
           (data: { generationId: string; error: string }) => {
             failGeneration(data.generationId, data.error);
-          }
+          },
         );
 
         socketRef.current.on('CREDITS_UPDATED', (data: { credits: number }) => {
@@ -128,64 +135,73 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     updateCredits,
   ]);
 
-  // Submit prompt and start generation simulation
+  // Submit prompt and create paired generations (v1 and v2 cards)
   const submitPrompt = useCallback(
     async (prompt: string) => {
-      const generation = addGeneration(prompt);
+      const { gen1, gen2, groupId } = addPairedGenerations(prompt);
 
       // If socket is connected, emit to server
       if (socketRef.current?.connected) {
-        socketRef.current.emit('START_GENERATION', {
-          generationId: generation.id,
+        socketRef.current.emit('START_PAIRED_GENERATION', {
+          groupId,
           prompt,
         });
       } else {
-        // Fallback: Simulate generation locally
-        simulateGeneration(generation.id, prompt, {
+        // Fallback: Simulate generation locally for both
+        simulateLocalGeneration(gen1.id, prompt, {
           updateProgress: updateGenerationProgress,
           complete: completeGeneration,
           fail: failGeneration,
-          updateCredits,
         });
+
+        // Start second with slight delay
+        setTimeout(() => {
+          simulateLocalGeneration(gen2.id, prompt, {
+            updateProgress: updateGenerationProgress,
+            complete: completeGeneration,
+            fail: failGeneration,
+          });
+        }, 300);
+
+        // Deduct credits
+        const currentCredits = useGenerationStore.getState().user.credits;
+        updateCredits(Math.max(0, currentCredits - 20));
       }
     },
     [
-      addGeneration,
+      addPairedGenerations,
       updateGenerationProgress,
       completeGeneration,
       failGeneration,
       updateCredits,
-    ]
+    ],
   );
 
-  // Retry failed generation
+  // Retry a single failed generation
   const retryGeneration = useCallback(
     (generationId: string) => {
       const generations = useGenerationStore.getState().generations;
       const generation = generations.find((g) => g.id === generationId);
 
       if (generation) {
-        // Reset and restart
+        // Reset progress
         updateGenerationProgress(generationId, 0);
 
         if (socketRef.current?.connected) {
-          socketRef.current.emit('RETRY_GENERATION', { generationId });
+          socketRef.current.emit('RETRY_GENERATION', {
+            generationId,
+            prompt: generation.prompt,
+          });
         } else {
-          simulateGeneration(generationId, generation.prompt, {
+          simulateLocalGeneration(generationId, generation.prompt, {
             updateProgress: updateGenerationProgress,
             complete: completeGeneration,
             fail: failGeneration,
-            updateCredits,
           });
         }
       }
     },
-    [
-      updateGenerationProgress,
-      completeGeneration,
-      failGeneration,
-      updateCredits,
-    ]
+    [updateGenerationProgress, completeGeneration, failGeneration],
   );
 
   return (
@@ -205,92 +221,63 @@ export function useSocket() {
   return context;
 }
 
-// Local simulation function (used when WebSocket server is not available)
-function simulateGeneration(
+// Local simulation function for a single generation
+function simulateLocalGeneration(
   generationId: string,
   prompt: string,
   callbacks: {
     updateProgress: (id: string, progress: number, message?: string) => void;
-    complete: (
-      id: string,
-      versions: GenerationVersion[],
-      coverImage: string,
-      title: string
-    ) => void;
+    complete: (id: string, duration: number, waveformData: number[]) => void;
     fail: (id: string, error: string) => void;
-    updateCredits: (credits: number) => void;
-  }
+  },
 ) {
-  const { updateProgress, complete, fail, updateCredits } = callbacks;
+  const { updateProgress, complete, fail } = callbacks;
 
-  // Simulate random failure (10% chance)
-  const willFail = Math.random() < 0.1;
-  const failAtStep = willFail ? Math.floor(Math.random() * 3) + 1 : -1; // Fail at step 1, 2, or 3
+  const willFail = Math.random() < 0.1; // 10% failure rate
+  const failAtStep = willFail ? Math.floor(Math.random() * 4) + 2 : -1;
 
-  const progressSteps = [0, 25, 50, 75, 90, 100];
-  let stepIndex = 0;
-
+  const progressSteps = [0, 15, 30, 50, 70, 85, 100];
   const progressMessages = [
-    'Starting AI audio engine',
+    'Initializing...',
     'Analyzing prompt...',
-    'Generating melody structure',
-    'Synthesizing instruments',
-    'Mixing and mastering',
-    'Finalizing output',
+    'Generating melody',
+    'Creating harmony',
+    'Synthesizing',
+    'Mixing audio',
+    'Finalizing...',
   ];
 
-  // Emit initial progress (0%) immediately
+  let stepIndex = 0;
+  const baseInterval = 1200 + Math.floor(Math.random() * 400);
+
+  // Initial progress
   updateProgress(generationId, progressSteps[0], progressMessages[0]);
 
-  const interval = setInterval(() => {
+  const runStep = () => {
     stepIndex++;
 
     if (willFail && stepIndex === failAtStep) {
-      clearInterval(interval);
-      fail(generationId, 'Server busy. 4.9K users in the queue.');
+      fail(generationId, 'Generation failed. Please retry.');
       return;
     }
 
     if (stepIndex >= progressSteps.length) {
-      clearInterval(interval);
-
-      // Generate completed versions
-      const versions: GenerationVersion[] = [
-        {
-          id: `${generationId}_v1`,
-          version: 1,
-          duration: Math.floor(Math.random() * 120) + 180, // 3-5 minutes
-          waveformData: generateWaveformData(),
-        },
-        {
-          id: `${generationId}_v2`,
-          version: 2,
-          duration: Math.floor(Math.random() * 120) + 180,
-          waveformData: generateWaveformData(),
-        },
-      ];
-
-      // Generate title from prompt
-      const words = prompt.split(' ').filter((w) => w.length > 3);
-      const title =
-        words.length >= 2
-          ? words
-              .slice(0, 3)
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-              .join(' ')
-          : prompt.slice(0, 30);
-
-      complete(generationId, versions, getRandomCover(), title);
-
-      // Deduct credits
-      const currentCredits = useGenerationStore.getState().user.credits;
-      updateCredits(Math.max(0, currentCredits - 20));
-    } else {
-      updateProgress(
+      complete(
         generationId,
-        progressSteps[stepIndex],
-        progressMessages[stepIndex]
+        Math.floor(Math.random() * 120) + 180,
+        generateWaveformData(),
       );
+      return;
     }
-  }, 1500); // Update every 1.5 seconds
+
+    updateProgress(
+      generationId,
+      progressSteps[stepIndex],
+      progressMessages[Math.min(stepIndex, progressMessages.length - 1)],
+    );
+
+    setTimeout(runStep, baseInterval);
+  };
+
+  setTimeout(runStep, baseInterval);
 }

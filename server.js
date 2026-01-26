@@ -17,24 +17,28 @@ const activeGenerations = new Map();
 const randomBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Simulate generation process
-function simulateGeneration(io, socketId, generationId, prompt) {
-  const willFail = Math.random() < 0.15; // 15% failure rate
-  const failAtStep = willFail ? randomBetween(1, 3) : -1; // Fail at step 1, 2, or 3
+// Progress messages for generation
+const progressMessages = [
+  'Initializing...',
+  'Analyzing prompt...',
+  'Generating melody',
+  'Creating harmony',
+  'Synthesizing',
+  'Mixing audio',
+  'Finalizing...',
+];
 
-  const progressSteps = [0, 25, 50, 75, 90, 100];
+// Simulate a single generation (each card gets its own progress)
+function simulateSingleGeneration(io, socketId, generationId, prompt) {
+  const willFail = Math.random() < 0.1; // 10% failure rate
+  const failAtStep = willFail ? randomBetween(2, 5) : -1;
+
+  // Each generation has slightly different timing for realistic feel
+  const baseInterval = 1200 + randomBetween(-200, 400);
+  const progressSteps = [0, 15, 30, 50, 70, 85, 100];
   let stepIndex = 0;
 
-  const progressMessages = [
-    'Starting AI audio engine',
-    'Analyzing prompt...',
-    'Generating melody structure',
-    'Synthesizing instruments',
-    'Mixing and mastering',
-    'Finalizing output',
-  ];
-
-  // Emit initial progress (0%) immediately
+  // Emit initial progress
   io.to(socketId).emit('GENERATION_PROGRESS', {
     generationId,
     progress: progressSteps[0],
@@ -44,55 +48,6 @@ function simulateGeneration(io, socketId, generationId, prompt) {
   const interval = setInterval(() => {
     stepIndex++;
 
-    if (stepIndex >= progressSteps.length) {
-      clearInterval(interval);
-      activeGenerations.delete(generationId);
-
-      // Generate completed data
-      const versions = [
-        {
-          id: `${generationId}_v1`,
-          version: 1,
-          duration: randomBetween(180, 300),
-          waveformData: Array.from(
-            { length: 50 },
-            () => Math.random() * 0.8 + 0.2
-          ),
-        },
-      ];
-
-      const covers = [
-        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      ];
-
-      // Generate title from prompt
-      const words = prompt.split(' ').filter((w) => w.length > 3);
-      const title =
-        words.length >= 2
-          ? words
-              .slice(0, 3)
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-              .join(' ')
-          : prompt.slice(0, 30);
-
-      io.to(socketId).emit('GENERATION_COMPLETE', {
-        generationId,
-        versions,
-        coverImage: covers[Math.floor(Math.random() * covers.length)],
-        title,
-      });
-
-      // Also emit credits update
-      io.to(socketId).emit('CREDITS_UPDATED', {
-        credits: Math.max(0, 120 - 20), // Deduct 20 credits
-      });
-      return;
-    }
-
     // Check for failure
     if (willFail && stepIndex === failAtStep) {
       clearInterval(interval);
@@ -100,24 +55,83 @@ function simulateGeneration(io, socketId, generationId, prompt) {
 
       io.to(socketId).emit('GENERATION_FAILED', {
         generationId,
-        error: 'Server busy. 4.9K users in the queue.',
+        error: 'Generation failed. Please retry.',
+      });
+      return;
+    }
+
+    if (stepIndex >= progressSteps.length) {
+      clearInterval(interval);
+      activeGenerations.delete(generationId);
+
+      // Generation completed
+      io.to(socketId).emit('GENERATION_COMPLETE', {
+        generationId,
+        duration: randomBetween(180, 300),
+        waveformData: Array.from(
+          { length: 50 },
+          () => Math.random() * 0.8 + 0.2,
+        ),
       });
       return;
     }
 
     const progress = progressSteps[stepIndex];
-
-    // Send progress update
     io.to(socketId).emit('GENERATION_PROGRESS', {
       generationId,
       progress,
       message:
         progressMessages[Math.min(stepIndex, progressMessages.length - 1)],
     });
-  }, 1500); // Update every 1.5 seconds
+  }, baseInterval);
 
-  // Store interval for potential cleanup
+  // Store interval for cleanup
   activeGenerations.set(generationId, { interval, socketId });
+}
+
+// Simulate paired generations (v1 and v2 as separate cards)
+function simulatePairedGenerations(io, socketId, groupId, prompt) {
+  const covers = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  ];
+
+  // Generate title from prompt
+  const words = prompt.split(' ').filter((w) => w.length > 3);
+  const title =
+    words.length >= 2
+      ? words
+          .slice(0, 3)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ')
+      : prompt.slice(0, 30);
+
+  const coverImage = covers[Math.floor(Math.random() * covers.length)];
+
+  // Emit paired generation started
+  io.to(socketId).emit('PAIRED_GENERATION_STARTED', {
+    groupId,
+    coverImage,
+    title,
+    generationIds: [`${groupId}_v1`, `${groupId}_v2`],
+  });
+
+  // Start both generations with slight stagger
+  setTimeout(() => {
+    simulateSingleGeneration(io, socketId, `${groupId}_v1`, prompt);
+  }, 0);
+
+  setTimeout(() => {
+    simulateSingleGeneration(io, socketId, `${groupId}_v2`, prompt);
+  }, 300);
+
+  // Emit credits update
+  io.to(socketId).emit('CREDITS_UPDATED', {
+    credits: Math.max(0, 120 - 20), // Deduct 20 credits
+  });
 }
 
 app.prepare().then(() => {
@@ -139,7 +153,16 @@ app.prepare().then(() => {
   io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
-    // Handle generation start
+    // Handle paired generation start (creates v1 and v2 cards)
+    socket.on('START_PAIRED_GENERATION', (data) => {
+      const { groupId, prompt } = data;
+      console.log(`Starting paired generation: ${groupId}`);
+
+      // Start paired simulation
+      simulatePairedGenerations(io, socket.id, groupId, prompt);
+    });
+
+    // Handle single generation start (backwards compatible)
     socket.on('START_GENERATION', (data) => {
       const { generationId, prompt } = data;
       console.log(`Starting generation: ${generationId}`);
@@ -147,8 +170,8 @@ app.prepare().then(() => {
       // Emit started event
       socket.emit('GENERATION_STARTED', { generationId });
 
-      // Start simulation
-      simulateGeneration(io, socket.id, generationId, prompt);
+      // Start single simulation
+      simulateSingleGeneration(io, socket.id, generationId, prompt);
     });
 
     // Handle retry
@@ -156,15 +179,27 @@ app.prepare().then(() => {
       const { generationId, prompt } = data;
       console.log(`Retrying generation: ${generationId}`);
 
-      // Clear any existing simulation
+      // Clear any existing generation
       const existing = activeGenerations.get(generationId);
       if (existing) {
         clearInterval(existing.interval);
         activeGenerations.delete(generationId);
       }
 
+      // Reset progress
+      socket.emit('GENERATION_PROGRESS', {
+        generationId,
+        progress: 0,
+        message: 'Retrying...',
+      });
+
       // Start new simulation
-      simulateGeneration(io, socket.id, generationId, prompt || 'Retry prompt');
+      simulateSingleGeneration(
+        io,
+        socket.id,
+        generationId,
+        prompt || 'Retry prompt',
+      );
     });
 
     // Handle disconnect
@@ -172,10 +207,10 @@ app.prepare().then(() => {
       console.log(`Client disconnected: ${socket.id}`);
 
       // Clean up any active generations for this socket
-      for (const [genId, data] of activeGenerations.entries()) {
+      for (const [key, data] of activeGenerations.entries()) {
         if (data.socketId === socket.id) {
           clearInterval(data.interval);
-          activeGenerations.delete(genId);
+          activeGenerations.delete(key);
         }
       }
     });
