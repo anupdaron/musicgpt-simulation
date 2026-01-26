@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
@@ -165,15 +165,22 @@ export function GenerationCard({
   }
 
   // Completed state
+  const [isHovered, setIsHovered] = useState(false);
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ backgroundColor: 'rgba(26, 26, 26, 1)' }}
+      whileHover={{ backgroundColor: '#1D2125' }}
+      transition={{
+        backgroundColor: { duration: 0.7, ease: 'easeInOut' },
+        y: { duration: 0.3 },
+      }}
       onClick={handlePlay}
-      className='group relative p-4 rounded-xl bg-[#141414] border border-[#262626] cursor-pointer transition-colors'
+      className='group relative p-4 rounded-xl cursor-pointer'
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
     >
       <div className='flex items-center gap-4'>
         {/* Cover Image with Play Overlay */}
@@ -186,20 +193,20 @@ export function GenerationCard({
           />
 
           {/* Play/Pause Overlay */}
-          <div
-            className={cn(
-              'absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity',
-              isCurrentlyPlaying
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100',
-            )}
+          <motion.div
+            className='absolute inset-0 bg-black/60 flex items-center justify-center'
+            animate={{ opacity: isCurrentlyPlaying || isHovered ? 1 : 0 }}
+            transition={{ opacity: { duration: 0.7, ease: [0.4, 0, 0.2, 1] } }}
+            style={{
+              pointerEvents: isCurrentlyPlaying || isHovered ? 'auto' : 'none',
+            }}
           >
             {isCurrentlyPlaying ? (
               <Pause className='w-6 h-6 text-white' />
             ) : (
               <Play className='w-6 h-6 text-white ml-0.5' />
             )}
-          </div>
+          </motion.div>
 
           {/* Playing indicator */}
           {isCurrentlyPlaying && (
@@ -224,8 +231,6 @@ export function GenerationCard({
         <div className='flex-1 min-w-0'>
           <div className='flex items-center gap-2'>
             <h3 className='text-sm text-white font-medium truncate'>{title}</h3>
-
-            <Check className='w-4 h-4 text-[#22C55E] flex-shrink-0' />
           </div>
           <p className='text-xs text-[#737373] truncate mt-1'>{prompt}</p>
         </div>

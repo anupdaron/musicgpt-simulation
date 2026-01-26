@@ -246,7 +246,7 @@ export function PromptBox() {
         <GlowGroup layers={glowGroups[1]} delay={1.5} />
         <GlowGroup layers={glowGroups[2]} delay={2} />
         {/* Inner Container */}
-        <div className='relative bg-[#1D2125] rounded-3xl md:rounded-4xl border border-[#262626]'>
+        <div className='relative bg-primary-200 rounded-3xl md:rounded-4xl'>
           {/* Prompt Textarea */}
           <div className='p-3 md:p-4 pb-2'>
             <div className='relative'>

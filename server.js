@@ -29,7 +29,7 @@ const progressMessages = [
 ];
 
 const INVALID_PROMPTS = ['', ' ', 'invalid', 'error'];
-const FAILURE_RATE = 0.7; // 70% failure rate
+const FAILURE_RATE = 0.3; // 30% failure rate
 
 // Simulate a single generation (each card gets its own progress)
 function simulateSingleGeneration(io, socketId, generationId, prompt) {

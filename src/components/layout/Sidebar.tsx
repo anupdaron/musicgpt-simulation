@@ -96,7 +96,7 @@ function LanguageDropdown() {
                     'w-full flex items-center gap-2 px-3 py-4 text-xs transition-colors',
                     selected.code === lang.code
                       ? 'text-white bg-white/10'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-white/5'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-white/5',
                   )}
                 >
                   <Image
@@ -190,7 +190,7 @@ export function Sidebar() {
                     'inline-flex items-center gap-3 px-4 py-2.5 rounded-4xl transition-all relative group',
                     isActive
                       ? 'text-white bg-[#FFFFFF17]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#FFFFFF17]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#FFFFFF17]',
                   )}
                 >
                   <item.icon className={cn('w-5 h-5 transition-colors')} />
@@ -218,7 +218,7 @@ export function Sidebar() {
                       'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all',
                       isActive
                         ? 'text-white bg-[#1A1A1A]'
-                        : 'text-[#A3A3A3] hover:text-white hover:bg-[#141414]'
+                        : 'text-[#A3A3A3] hover:text-white hover:bg-[#141414]',
                     )}
                   >
                     <item.icon className='w-5 h-5' />
@@ -287,7 +287,7 @@ export function Sidebar() {
         initial={{ x: -240, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: [0, 0.55, 0.45, 1] }}
-        className='hidden md:flex fixed left-0 top-0 h-screen w-60 bg-[rgb(255_255_255_/_0.03)] border-r border-[#1A1A1A] flex-col z-40'
+        className='hidden md:flex fixed left-0 top-0 h-screen w-52 bg-white/3 border-r border-[#1A1A1A] flex-col z-40'
       >
         {sidebarContent}
       </motion.aside>

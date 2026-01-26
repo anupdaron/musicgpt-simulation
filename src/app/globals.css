@@ -31,6 +31,74 @@
   --error: #ef4444;
 
   --sidebar-width: 240px;
+
+  /* primary color  */
+  --primary-100: #16191c;
+  --primary-200: #1d2125;
+  --primary-250: #212529;
+  --primary-400: #303438;
+  --primary-800: #5d6165;
+  --primary-1000: #777a80;
+}
+
+@layer utilities {
+  .bg-primary-100 {
+    background-color: var(--primary-100);
+  }
+  .bg-primary-200 {
+    background-color: var(--primary-200);
+  }
+  .bg-primary-250 {
+    background-color: var(--primary-250);
+  }
+  .bg-primary-400 {
+    background-color: var(--primary-400);
+  }
+  .bg-primary-800 {
+    background-color: var(--primary-800);
+  }
+  .bg-primary-1000 {
+    background-color: var(--primary-1000);
+  }
+
+  .border-primary-100 {
+    border-color: var(--primary-100);
+  }
+  .border-primary-200 {
+    border-color: var(--primary-200);
+  }
+  .border-primary-250 {
+    border-color: var(--primary-250);
+  }
+  .border-primary-400 {
+    border-color: var(--primary-400);
+  }
+  .border-primary-800 {
+    border-color: var(--primary-800);
+  }
+
+  .border-primary-1000 {
+    border-color: var(--primary-1000);
+  }
+
+  .text-primary-100 {
+    color: var(--primary-100);
+  }
+  .text-primary-200 {
+    color: var(--primary-200);
+  }
+  .text-primary-250 {
+    color: var(--primary-250);
+  }
+  .text-primary-400 {
+    color: var(--primary-400);
+  }
+  .text-primary-800 {
+    color: var(--primary-800);
+  }
+  .text-primary-1000 {
+    color: var(--primary-1000);
+  }
 }
 
 @theme inline {

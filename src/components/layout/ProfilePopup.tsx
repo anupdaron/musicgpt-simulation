@@ -3,7 +3,13 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  Settings,
+  ChevronRight,
+  AlertTriangle,
+  Loader2,
+  Info,
+} from 'lucide-react';
 import { useGenerationStore, useUser, useIsProfilePopupOpen } from '@/store';
 import { GradientProgress } from '../ui/GradientProgress';
 import { useSocket } from '@/hooks/useSocket';
@@ -182,10 +188,10 @@ export function ProfilePopup() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2, ease: [0, 0.55, 0.45, 1] }}
-            className='absolute right-0 top-20 w-100 bg-[#1A1A1A] rounded-2xl border border-[#262626] shadow-2xl overflow-hidden z-50'
+            className='absolute space-y-4 right-0 top-16 w-100 bg-primary-100 rounded-2xl border border-primary-100 shadow-2xl overflow-hidden z-50 p-4'
           >
             {/* Header */}
-            <div className='p-4 flex items-center justify-between border-b border-[#262626]'>
+            <div className='flex items-center justify-between border-b border-[#262626]'>
               <div className='flex items-center gap-3'>
                 <div className='relative w-16 h-16 rounded-full'>
                   <div className='absolute inset-0 bg-gradient-to-br from-[#FF6B2C] to-[#FF2C9C] rounded-full' />
@@ -208,17 +214,17 @@ export function ProfilePopup() {
             </div>
 
             {/* Credits */}
-            <div className='p-4 border-b border-[#262626]'>
+            <div className='p-4 bg-primary-250 rounded-2xl'>
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
                   <span className='text-sm text-white'>
                     {user.credits}/{user.maxCredits} credits
                   </span>
-                  <button className='w-4 h-4 rounded-full bg-[#262626] flex items-center justify-center'>
-                    <span className='text-[10px] text-[#737373]'>?</span>
+                  <button className='text-primary-1000'>
+                    <Info className='w-4 h-4' />
                   </button>
                 </div>
-                <button className='flex items-center gap-1 text-sm text-[#A3A3A3] hover:text-white transition-colors'>
+                <button className='flex items-center gap-1 text-sm hover:text-white transition-colors'>
                   Top Up <ChevronRight className='w-4 h-4' />
                 </button>
               </div>

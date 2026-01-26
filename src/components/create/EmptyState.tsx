@@ -19,7 +19,7 @@ export function EmptyState() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className='relative mb-6'
       >
-        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-[#1A1A1A] to-[#141414] flex items-center justify-center border border-[#262626]'>
+        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-background-tertiary to-[#141414] flex items-center justify-center border border-[#262626]'>
           <Music className='w-10 h-10 text-[#525252]' />
         </div>
         {/* Floating sparkles */}
