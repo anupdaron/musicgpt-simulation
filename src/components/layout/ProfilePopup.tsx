@@ -3,34 +3,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Settings,
-  ChevronRight,
-  AlertTriangle,
-  X,
-  RefreshCw,
-  Loader2,
-} from 'lucide-react';
+import { Settings, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
 import { useGenerationStore, useUser, useIsProfilePopupOpen } from '@/store';
-import { cn } from '@/lib/utils';
 import { GradientProgress } from '../ui/GradientProgress';
 import { useSocket } from '@/hooks/useSocket';
-
-// Skeleton component for loading state
-function GenerationSkeleton() {
-  return (
-    <div className='p-3 mx-3 my-2'>
-      <div className='flex items-center gap-3 animate-pulse'>
-        <div className='w-16 h-16 rounded-xl bg-[#262626] shrink-0' />
-        <div className='flex-1 min-w-0 space-y-2'>
-          <div className='h-4 bg-[#262626] rounded w-3/4' />
-          <div className='h-3 bg-[#262626] rounded w-1/2' />
-        </div>
-        <div className='h-5 w-8 bg-[#262626] rounded' />
-      </div>
-    </div>
-  );
-}
 
 // Shimmer effect skeleton variant
 function GenerationSkeletonShimmer() {
@@ -72,7 +48,7 @@ export function ProfilePopup() {
   const setPopupOpen = useGenerationStore((state) => state.setProfilePopupOpen);
   const generations = useGenerationStore((state) => state.generations);
   const markGenerationsAsSeen = useGenerationStore(
-    (state) => state.markGenerationsAsSeen
+    (state) => state.markGenerationsAsSeen,
   );
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -125,7 +101,7 @@ export function ProfilePopup() {
         loadMore();
       }
     },
-    [loadMore]
+    [loadMore],
   );
 
   // Get recent generations (most recent first, max 5)
@@ -137,7 +113,7 @@ export function ProfilePopup() {
       g.status === 'generating' ||
       g.status === 'pending' ||
       g.status === 'failed' ||
-      g.isNew
+      g.isNew,
   ).length;
 
   // Check for insufficient credits
@@ -356,6 +332,7 @@ interface GenerationItemProps {
     versions: Array<{ version: number }>;
     coverImage?: string;
     isNew?: boolean;
+    variationNumber?: number;
   };
   index: number;
 }
@@ -371,12 +348,13 @@ function GenerationItem({ generation, index }: GenerationItemProps) {
     coverImage,
     id,
     isNew,
+    variationNumber,
   } = generation;
   const { retryGeneration } = useSocket();
   const removeGeneration = useGenerationStore(
-    (state) => state.removeGeneration
+    (state) => state.removeGeneration,
   );
-
+  console.log('Rendering GenerationItem:', id, status);
   return (
     <motion.div
       layout
@@ -386,67 +364,61 @@ function GenerationItem({ generation, index }: GenerationItemProps) {
       transition={{ delay: index * 0.05 }}
       className='p-3 mx-3 my-2'
     >
-      {status === 'failed' ? (
-        error?.includes('Server busy') ? (
-          // Server Busy Error - Simple inline design
-          <div className='p-3 rounded-lg bg-[#1A1A1A]'>
-            <div className='flex items-center gap-2'>
-              <AlertTriangle className='w-4 h-4 text-[#EF4444]' />
-              <span className='text-sm text-[#EF4444]'>Oops! Server busy.</span>
-            </div>
-            <p className='text-sm text-[#A3A3A3] mt-1'>
-              4.9K users in the queue.{' '}
-              <button
-                onClick={() => retryGeneration(id)}
-                className='text-white underline hover:no-underline'
-              >
-                Retry
-              </button>
-            </p>
+      {status === 'failed' && error?.includes('Server busy') ? (
+        // Server Busy Error - Simple inline design
+        <div className='p-3 rounded-lg bg-[#1A1A1A]'>
+          <div className='flex items-center gap-2'>
+            <AlertTriangle className='w-4 h-4 text-[#EF4444]' />
+            <span className='text-sm text-[#EF4444]'>Oops! Server busy.</span>
           </div>
-        ) : (
-          // Invalid Prompt Error - Card with icon
-          <div className='p-4 rounded-xl bg-[#1A1A1A]'>
-            <div className='flex items-start gap-3'>
-              <div
-                className='w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0'
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(200, 0, 255, 1) 0%, rgba(255, 44, 155, 1) 25%, rgba(255, 123, 0, 1) 50%, rgba(255, 133, 4, 1) 75%, rgba(255, 211, 99, 1) 100%)',
-                }}
-              >
-                <span className='text-2xl'>🥲</span>
-              </div>
-              <div className='flex-1 min-w-0'>
-                <div className='font-medium text-white text-sm'>
-                  Invalid Prompt
-                </div>
-                <p className='text-xs text-[#737373] mt-0.5 truncate'>
-                  {prompt}
-                </p>
-              </div>
+          <p className='text-sm text-[#A3A3A3] mt-1'>
+            4.9K users in the queue.{' '}
+            <button
+              onClick={() => retryGeneration(id)}
+              className='text-white underline hover:no-underline'
+            >
+              Retry
+            </button>
+          </p>
+        </div>
+      ) : status === 'failed' && error?.includes('Invalid prompt') ? (
+        // Invalid Prompt Error - Card with icon
+        <div className='p-4 rounded-xl bg-[#1A1A1A]'>
+          <div className='flex items-start gap-3'>
+            <div className='w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#D89C3A]'>
+              <Image
+                src='/smiling-face-with-tear.png'
+                alt='Smiling Face with Tear'
+                width={34}
+                height={34}
+              />
             </div>
-            <p className='text-sm text-[#A3A3A3] mt-3'>
-              Your prompt does not seem to be valid. Please provide a prompt
-              related to song creation, remixing, covers, or similar music
-              tasks.
-            </p>
-            <div className='flex gap-2 mt-4'>
-              <button
-                onClick={() => retryGeneration(id)}
-                className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
-              >
-                Retry
-              </button>
-              <button
-                onClick={() => navigator.clipboard.writeText(prompt)}
-                className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
-              >
-                Copy prompt
-              </button>
+            <div className='flex-1 min-w-0'>
+              <div className='font-medium text-white text-sm'>
+                Invalid Prompt
+              </div>
+              <p className='text-xs text-[#737373] mt-0.5 truncate'>{prompt}</p>
             </div>
           </div>
-        )
+          <p className='text-sm text-[#A3A3A3] mt-3'>
+            Your prompt does not seem to be valid. Please provide a prompt
+            related to song creation, remixing, covers, or similar music tasks.
+          </p>
+          <div className='flex gap-2 mt-4'>
+            <button
+              onClick={() => retryGeneration(id)}
+              className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => navigator.clipboard.writeText(prompt)}
+              className='px-4 py-2 text-sm text-white border border-[#404040] rounded-lg hover:bg-[#262626] transition-colors'
+            >
+              Copy prompt
+            </button>
+          </div>
+        </div>
       ) : status === 'generating' || status === 'pending' ? (
         <div className='relative rounded-xl overflow-hidden'>
           {/* Progress background */}
@@ -505,14 +477,9 @@ function GenerationItem({ generation, index }: GenerationItemProps) {
             <p className='text-xs text-[#525252] mt-0.5'>Completed</p>
           </div>
           <div className='flex gap-1'>
-            {versions.map((v, i) => (
-              <span
-                key={i}
-                className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5'
-              >
-                v{v.version}
-              </span>
-            ))}
+            <span className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5'>
+              v{variationNumber}
+            </span>
           </div>
         </div>
       ) : null}

@@ -28,10 +28,24 @@ const progressMessages = [
   'Finalizing...',
 ];
 
+const INVALID_PROMPTS = ['', ' ', 'invalid', 'error'];
+const FAILURE_RATE = 0.7; // 70% failure rate
+
 // Simulate a single generation (each card gets its own progress)
 function simulateSingleGeneration(io, socketId, generationId, prompt) {
-  const willFail = Math.random() < 0.1; // 10% failure rate
+  const willFail = Math.random() < FAILURE_RATE; // 70% failure rate
   const failAtStep = willFail ? randomBetween(2, 5) : -1;
+  console.log(prompt);
+  const invalidPrompt = INVALID_PROMPTS.includes(prompt.toLowerCase());
+
+  if (invalidPrompt) {
+    // Immediate failure for invalid prompts
+    io.to(socketId).emit('GENERATION_FAILED', {
+      generationId,
+      error: 'Invalid prompt provided.',
+    });
+    return;
+  }
 
   // Each generation has slightly different timing for realistic feel
   const baseInterval = 1200 + randomBetween(-200, 400);
