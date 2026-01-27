@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import {
   Play,
   Pause,
-  MoreHorizontal,
   AlertTriangle,
   RefreshCw,
   Check,
@@ -18,6 +17,7 @@ import { useGenerationStore } from '@/store';
 import { useSocket } from '@/hooks/useSocket';
 import { cn, formatDuration } from '@/lib/utils';
 import { GradientProgress } from '../ui/GradientProgress';
+import { TrackMenu } from '../ui/TrackMenu';
 import type { Generation } from '@/types';
 
 // Memoized shine text component to prevent animation restart on parent re-renders
@@ -454,12 +454,14 @@ export function GenerationCard({
           </span>
 
           {/* More Options */}
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className='p-1.5 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all opacity-0 group-hover:opacity-100'
-          >
-            <MoreHorizontal className='w-4 h-4' />
-          </button>
+          <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+            <TrackMenu
+              position='top'
+              align='right'
+              triggerClassName='p-1.5 text-[#525252]'
+              onDelete={() => removeGeneration(id)}
+            />
+          </div>
         </div>
       </motion.div>
     );
@@ -827,12 +829,14 @@ export function GenerationCard({
         </div>
 
         {/* More Options - Always visible on mobile */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className='p-2 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all md:opacity-0 md:group-hover:opacity-100'
-        >
-          <MoreHorizontal className='w-5 h-5' />
-        </button>
+        <div className='md:opacity-0 md:group-hover:opacity-100 transition-opacity'>
+          <TrackMenu
+            position='top'
+            align='right'
+            triggerClassName='p-2 text-[#525252]'
+            onDelete={() => removeGeneration(id)}
+          />
+        </div>
       </div>
     </motion.div>
   );
