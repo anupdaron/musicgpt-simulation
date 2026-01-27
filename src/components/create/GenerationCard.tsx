@@ -116,7 +116,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-4 rounded-xl bg-[#1A1A1A]'>
             <div className='flex items-start gap-3'>
@@ -170,7 +170,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#1A1A1A]'>
             <div className='flex items-center gap-2'>
@@ -200,7 +200,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#261A14] border border-[#3D2A1F] flex items-center justify-between'>
             <div className='flex items-center gap-2'>
@@ -236,7 +236,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#1A1414] border border-[#3D1F1F]'>
             <div className='flex items-center gap-3'>
@@ -272,7 +272,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-1 my-2'
+          className='mx-1 my-1'
         >
           <div className='relative rounded-xl overflow-hidden'>
             {/* Progress fill background with gradient */}

@@ -46,9 +46,7 @@ export default function RootLayout({
             </header>
 
             {/* Page Content */}
-            <div className='px-4 md:px-6 pb-32 max-w-4xl mx-auto '>
-              {children}
-            </div>
+            <div className='px-4 md:px-6 pb-32 mx-auto '>{children}</div>
           </main>
 
           {/* Mobile Profile Page */}

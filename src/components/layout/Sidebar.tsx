@@ -185,7 +185,7 @@ export function Sidebar() {
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href === '/create' ? '/' : item.href}
+                  href={item.href}
                   className={cn(
                     'inline-flex items-center gap-3 px-4 py-2.5 rounded-4xl transition-all relative group',
                     isActive
