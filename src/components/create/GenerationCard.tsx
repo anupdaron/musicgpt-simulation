@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import {
   Play,
   Pause,
-  MoreHorizontal,
   AlertTriangle,
   RefreshCw,
   Check,
@@ -18,6 +17,7 @@ import { useGenerationStore } from '@/store';
 import { useSocket } from '@/hooks/useSocket';
 import { cn, formatDuration } from '@/lib/utils';
 import { GradientProgress } from '../ui/GradientProgress';
+import { TrackMenu } from '../ui/TrackMenu';
 import type { Generation } from '@/types';
 
 // Memoized shine text component to prevent animation restart on parent re-renders
@@ -116,7 +116,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-4 rounded-xl bg-[#1A1A1A]'>
             <div className='flex items-start gap-3'>
@@ -170,7 +170,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#1A1A1A]'>
             <div className='flex items-center gap-2'>
@@ -200,7 +200,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#261A14] border border-[#3D2A1F] flex items-center justify-between'>
             <div className='flex items-center gap-2'>
@@ -236,7 +236,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-3 my-2'
+          className='mx-1 my-1'
         >
           <div className='p-3 rounded-lg bg-[#1A1414] border border-[#3D1F1F]'>
             <div className='flex items-center gap-3'>
@@ -272,7 +272,7 @@ export function GenerationCard({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ delay: index * 0.05 }}
-          className='p-3 mx-1 my-2'
+          className='mx-1 my-1'
         >
           <div className='relative rounded-xl overflow-hidden'>
             {/* Progress fill background with gradient */}
@@ -292,7 +292,7 @@ export function GenerationCard({
               <GradientProgress
                 progress={progress}
                 size={44}
-                imageUrl='/art.jpg'
+                imageUrl={coverImage}
               />
               <div className='flex-1 min-w-0'>
                 {/* Title with shine effect */}
@@ -305,7 +305,7 @@ export function GenerationCard({
                 </p>
               </div>
               {variationNumber && (
-                <span className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5'>
+                <span className='text-xs text-primary-1000 border border-[#333333] rounded px-1.5 py-0.5'>
                   v{variationNumber}
                 </span>
               )}
@@ -337,27 +337,39 @@ export function GenerationCard({
           <div className='relative shrink-0'>
             {isNew && <NewIndicator />}
             <div className='relative w-15 h-15 rounded-xl overflow-hidden'>
-              <Image src='/art.jpg' alt={title} fill className='object-cover' />
+              <Image
+                src={coverImage || '/art.jpg'}
+                alt={title}
+                fill
+                className='object-cover'
+                unoptimized
+              />
 
               {/* Play/Pause Overlay */}
               <motion.div
-                className='absolute inset-0 bg-black/60 flex items-center justify-center'
+                className='absolute inset-0 bg-black/40 flex items-center justify-center'
                 animate={{
                   opacity: isCurrentlyPlaying || isHoveredCompact ? 1 : 0,
                 }}
                 transition={{
-                  opacity: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
+                  opacity: { duration: 0.2 },
                 }}
                 style={{
                   pointerEvents:
                     isCurrentlyPlaying || isHoveredCompact ? 'auto' : 'none',
                 }}
               >
-                {isCurrentlyPlaying ? (
-                  <Pause className='w-6 h-6 text-white' />
-                ) : (
-                  <Play className='w-6 h-6 text-white ml-0.5' />
-                )}
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className='w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white flex items-center justify-center'
+                >
+                  {isCurrentlyPlaying ? (
+                    <Pause className='w-4 h-4 text-white' fill='white' />
+                  ) : (
+                    <Play className='w-4 h-4 text-white ml-0.5' fill='white' />
+                  )}
+                </motion.div>
               </motion.div>
 
               {/* Playing indicator */}
@@ -412,7 +424,7 @@ export function GenerationCard({
                     'w-4 h-4 transition-colors',
                     isLiked
                       ? 'text-white fill-white'
-                      : 'text-[#525252] hover:text-white',
+                      : 'text-primary-1000 hover:text-white',
                   )}
                 />
               </motion.div>
@@ -441,7 +453,7 @@ export function GenerationCard({
                     'w-4 h-4 transition-colors',
                     isDisliked
                       ? 'text-white fill-white'
-                      : 'text-[#525252] hover:text-white',
+                      : 'text-primary-1000 hover:text-white',
                   )}
                 />
               </motion.div>
@@ -449,17 +461,19 @@ export function GenerationCard({
           </div>
 
           {/* Version Badge */}
-          <span className='text-xs text-[#525252] border border-[#333333] rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity'>
+          <span className='text-xs text-white/90 border bg-primary-100 border-primary-800 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity'>
             v{variationNumber}
           </span>
 
           {/* More Options */}
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className='p-1.5 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all opacity-0 group-hover:opacity-100'
-          >
-            <MoreHorizontal className='w-4 h-4' />
-          </button>
+          <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+            <TrackMenu
+              position='top'
+              align='right'
+              triggerClassName='p-1.5 text-primary-1000'
+              onDelete={() => removeGeneration(id)}
+            />
+          </div>
         </div>
       </motion.div>
     );
@@ -496,7 +510,7 @@ export function GenerationCard({
           <GradientProgress
             progress={progress}
             size={64}
-            imageUrl='/album-art.jpg'
+            imageUrl={coverImage}
           />
 
           {/* Content */}
@@ -507,7 +521,7 @@ export function GenerationCard({
             </ShineText>
             {/* Status message */}
             <div className='flex items-center gap-2 mt-2'>
-              <Clock className='w-3 h-3 text-[#525252]' />
+              <Clock className='w-3 h-3 text-primary-1000' />
               <span className='text-xs text-[#737373]'>
                 {generation.statusMessage ||
                   (status === 'pending'
@@ -519,7 +533,7 @@ export function GenerationCard({
 
           {/* Version Badge */}
           {variationNumber && (
-            <span className='text-xs text-[#525252] border border-[#333333] rounded px-2 py-1'>
+            <span className='text-xs text-primary-1000 border border-[#333333] bg-primary-50 rounded px-2 py-1'>
               v{variationNumber}
             </span>
           )}
@@ -700,29 +714,36 @@ export function GenerationCard({
           {isNew && <NewIndicator />}
           <div className='relative w-15 h-15 rounded-xl overflow-hidden'>
             <Image
-              src='/album-art.jpg'
+              src={coverImage || '/art.jpg'}
               alt={title}
               fill
               className='object-cover'
+              unoptimized
             />
 
             {/* Play/Pause Overlay */}
             <motion.div
-              className='absolute inset-0 bg-black/60 flex items-center justify-center'
+              className='absolute inset-0 bg-black/40 flex items-center justify-center'
               animate={{ opacity: isCurrentlyPlaying || isHovered ? 1 : 0 }}
               transition={{
-                opacity: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
+                opacity: { duration: 0.2 },
               }}
               style={{
                 pointerEvents:
                   isCurrentlyPlaying || isHovered ? 'auto' : 'none',
               }}
             >
-              {isCurrentlyPlaying ? (
-                <Pause className='w-6 h-6 text-white' />
-              ) : (
-                <Play className='w-6 h-6 text-white ml-0.5' />
-              )}
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className='w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white flex items-center justify-center'
+              >
+                {isCurrentlyPlaying ? (
+                  <Pause className='w-4 h-4 text-white' fill='white' />
+                ) : (
+                  <Play className='w-4 h-4 text-white ml-0.5' fill='white' />
+                )}
+              </motion.div>
             </motion.div>
 
             {/* Playing indicator */}
@@ -777,7 +798,7 @@ export function GenerationCard({
                   'w-4 h-4 transition-colors',
                   isLiked
                     ? 'text-white fill-white'
-                    : 'text-[#525252] hover:text-white',
+                    : 'text-primary-1000 hover:text-white',
                 )}
               />
             </motion.div>
@@ -806,7 +827,7 @@ export function GenerationCard({
                   'w-4 h-4 transition-colors',
                   isDisliked
                     ? 'text-white fill-white'
-                    : 'text-[#525252] hover:text-white',
+                    : 'text-primary-1000 hover:text-white',
                 )}
               />
             </motion.div>
@@ -819,7 +840,7 @@ export function GenerationCard({
             whileTap={{ scale: 0.95 }}
             className={cn(
               'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
-              'bg-[#262626] hover:bg-[#333333] text-[#A3A3A3] hover:text-white',
+              'bg-primary-100 hover:bg-[#333333] border border-primary-800 text-[#A3A3A3] hover:text-white',
             )}
           >
             v{variationNumber}
@@ -827,12 +848,14 @@ export function GenerationCard({
         </div>
 
         {/* More Options - Always visible on mobile */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className='p-2 rounded-lg text-[#525252] hover:text-white hover:bg-[#262626] transition-all md:opacity-0 md:group-hover:opacity-100'
-        >
-          <MoreHorizontal className='w-5 h-5' />
-        </button>
+        <div className='md:opacity-0 md:group-hover:opacity-100 transition-opacity'>
+          <TrackMenu
+            position='top'
+            align='right'
+            triggerClassName='p-2 text-primary-1000'
+            onDelete={() => removeGeneration(id)}
+          />
+        </div>
       </div>
     </motion.div>
   );

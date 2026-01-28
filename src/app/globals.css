@@ -4,6 +4,16 @@
   button {
     cursor: pointer;
   }
+
+  /* Hide scrollbars globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
 
 /* Shine text animation */
@@ -45,6 +55,7 @@
   --sidebar-width: 240px;
 
   /* primary color  */
+  --primary-50: #0a0c0d;
   --primary-100: #16191c;
   --primary-200: #1d2125;
   --primary-250: #212529;
@@ -55,6 +66,9 @@
 }
 
 @layer utilities {
+  .bg-primary-50 {
+    background-color: var(--primary-50);
+  }
   .bg-primary-100 {
     background-color: var(--primary-100);
   }

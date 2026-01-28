@@ -15,10 +15,12 @@ import {
   Music2,
   ChevronLeft,
   ChevronDown,
+  Command,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useGenerationStore, useIsSidebarOpen } from '@/store';
+import { SearchModal } from './SearchModal';
 
 const navigationItems = [
   { icon: Home, label: 'Home', href: '/' },
@@ -123,11 +125,30 @@ export function Sidebar() {
   const pathname = usePathname();
   const isSidebarOpen = useIsSidebarOpen();
   const setSidebarOpen = useGenerationStore((state) => state.setSidebarOpen);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Toggle search modal
+  const toggleSearch = () => {
+    setIsSearchOpen((prev) => !prev);
+  };
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname, setSidebarOpen]);
+
+  // Handle Ctrl+K keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -166,14 +187,23 @@ export function Sidebar() {
       </div>
 
       {/* Search */}
-      <div className='px-4 mb-10'>
-        <button className='w-full flex items-center gap-3 px-3 py-2.5 rounded-4xl bg-transparent  hover:bg-[#262626] transition-all group border border-[#FFFFFF29]'>
+      <div className='px-4 mb-10 relative'>
+        <button
+          onClick={toggleSearch}
+          className='w-full flex items-center gap-3 px-3 py-2.5 rounded-4xl bg-transparent  hover:bg-[#262626] transition-all group border border-[#FFFFFF29]'
+        >
           <Search className='w-4 h-4' />
-          <span className='text-sm'>Search</span>
-          <span className='ml-auto text-xs text-[#525252] group-hover:text-[#737373] hidden md:inline'>
-            Ctrl+K
+          <span className='text-sm text-white'>Search</span>
+          <span className='ml-auto text-xs text-[#525252] group-hover:text-[#737373] hidden md:flex md:items-center gap-1'>
+            <Command size={14} /> <span className='text-sm'>K</span>
           </span>
         </button>
+
+        {/* Search Modal */}
+        <SearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
       </div>
 
       {/* Navigation */}
@@ -185,12 +215,12 @@ export function Sidebar() {
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href === '/create' ? '/' : item.href}
+                  href={item.href}
                   className={cn(
                     'inline-flex items-center gap-3 px-4 py-2.5 rounded-4xl transition-all relative group',
                     isActive
-                      ? 'text-white bg-[#FFFFFF17]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#FFFFFF17]',
+                      ? ' bg-white/12'
+                      : 'text-white hover:text-white hover:bg-white/12',
                   )}
                 >
                   <item.icon className={cn('w-5 h-5 transition-colors')} />
@@ -203,7 +233,7 @@ export function Sidebar() {
 
         {/* Library Section */}
         <div className='mt-8'>
-          <h3 className='px-4 text-xs font-semibold text-[#525252] uppercase tracking-wider mb-2'>
+          <h3 className='px-4 text-xs font-semibold text-white/50  tracking-wider mb-2'>
             Library
           </h3>
           <ul className='space-y-1'>
@@ -214,12 +244,7 @@ export function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all',
-                      isActive
-                        ? 'text-white bg-[#1A1A1A]'
-                        : 'text-[#A3A3A3] hover:text-white hover:bg-[#141414]',
-                    )}
+                    className='flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-white'
                   >
                     <item.icon className='w-5 h-5' />
                     <span className='text-sm font-medium'>{item.label}</span>
@@ -230,7 +255,7 @@ export function Sidebar() {
 
             {/* New Playlist */}
             <li>
-              <button className='w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#141414] transition-all'>
+              <button className='w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-[#141414] transition-all'>
                 <Plus className='w-5 h-5' />
                 <span className='text-sm font-medium'>New Playlist</span>
               </button>
@@ -302,7 +327,7 @@ export function Sidebar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className='md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40'
+              className='md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40'
             />
             {/* Sidebar */}
             <motion.aside
@@ -310,7 +335,7 @@ export function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className='md:hidden fixed left-0 top-0 h-screen w-60 bg-[rgb(255_255_255_/_0.03)] border-r border-[#1A1A1A] flex flex-col z-50'
+              className='md:hidden fixed left-0 top-0 h-screen w-60 bg-[rgb(255_255_255/0.03)] border-r border-[#1A1A1A] flex flex-col z-50 backdrop-blur-3xl'
             >
               {sidebarContent}
             </motion.aside>

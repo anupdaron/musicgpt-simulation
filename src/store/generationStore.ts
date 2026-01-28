@@ -100,7 +100,8 @@ const initialGenerations: Generation[] = [
     progress: 100,
     createdAt: new Date(Date.now() - 3600000),
     completedAt: new Date(Date.now() - 3500000),
-    coverImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    coverImage:
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop',
     groupId: 'group_1',
     variationNumber: 1,
     versions: [
@@ -121,7 +122,8 @@ const initialGenerations: Generation[] = [
     progress: 100,
     createdAt: new Date(Date.now() - 3600000),
     completedAt: new Date(Date.now() - 3480000),
-    coverImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    coverImage:
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop',
     groupId: 'group_1',
     variationNumber: 2,
     versions: [
@@ -141,7 +143,9 @@ const initialGenerations: Generation[] = [
     progress: 100,
     createdAt: new Date(Date.now() - 7200000),
     completedAt: new Date(Date.now() - 7100000),
-    coverImage: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    variationNumber: 1,
+    coverImage:
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
     versions: [
       {
         id: 'v2_1',
@@ -159,7 +163,9 @@ const initialGenerations: Generation[] = [
     progress: 100,
     createdAt: new Date(Date.now() - 10800000),
     completedAt: new Date(Date.now() - 10700000),
-    coverImage: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    variationNumber: 1,
+    coverImage:
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
     versions: [
       {
         id: 'v3_1',
@@ -174,10 +180,12 @@ const initialGenerations: Generation[] = [
     prompt: 'Chill lo-fi beats for studying, jazzy piano samples',
     title: 'Midnight Coffee',
     status: 'completed',
+    variationNumber: 1,
     progress: 100,
     createdAt: new Date(Date.now() - 14400000),
     completedAt: new Date(Date.now() - 14300000),
-    coverImage: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    coverImage:
+      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop',
     versions: [
       {
         id: 'v4_1',
@@ -193,9 +201,11 @@ const initialGenerations: Generation[] = [
     title: 'Rise of Heroes',
     status: 'completed',
     progress: 100,
+    variationNumber: 1,
     createdAt: new Date(Date.now() - 18000000),
     completedAt: new Date(Date.now() - 17900000),
-    coverImage: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    coverImage:
+      'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop',
     versions: [
       {
         id: 'v5_1',
@@ -211,9 +221,11 @@ const initialGenerations: Generation[] = [
     title: 'Wandering Souls',
     status: 'completed',
     progress: 100,
+    variationNumber: 1,
     createdAt: new Date(Date.now() - 21600000),
     completedAt: new Date(Date.now() - 21500000),
-    coverImage: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    coverImage:
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=400&fit=crop',
     versions: [
       {
         id: 'v6_1',
