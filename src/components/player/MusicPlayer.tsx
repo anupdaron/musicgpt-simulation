@@ -19,6 +19,7 @@ import {
   Undo2,
   MessageCircle,
   ListMusic,
+  User,
 } from 'lucide-react';
 import { useGenerationStore } from '@/store';
 import { cn, formatDuration } from '@/lib/utils';
@@ -56,6 +57,46 @@ export function MusicPlayer() {
 
   const progressRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Prevent background scrolling when mouse is over player, but allow internal scrolling
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Check if the target or any parent is a scrollable element
+      let element: HTMLElement | null = target;
+      while (element && element !== container) {
+        const hasOverflow = element.scrollHeight > element.clientHeight;
+        if (hasOverflow && element.classList.contains('overflow-y-auto')) {
+          // Allow scrolling within scrollable areas
+          const isAtTop = element.scrollTop === 0 && e.deltaY < 0;
+          const isAtBottom =
+            element.scrollTop + element.clientHeight >=
+              element.scrollHeight - 1 && e.deltaY > 0;
+
+          // Only prevent default if not at scroll boundaries (allow internal scroll)
+          if (!isAtTop && !isAtBottom) {
+            e.stopPropagation();
+            return;
+          }
+        }
+        element = element.parentElement;
+      }
+
+      // Prevent background scrolling for all other cases
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   // Simulate playback progress
   useEffect(() => {
@@ -133,12 +174,13 @@ In the silence, I hear you call`;
           transition={{ duration: 0.3, ease: [0, 0.55, 0.45, 1] }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onWheel={(e) => e.stopPropagation()}
           className='fixed bottom-4 left-4 right-4 z-50 max-w-4xl mx-auto md:left-64 md:right-4 '
         >
           {/* Main Player Container */}
           <motion.div
             layout
-            className='relative bg-[#1A1A1A]/95 backdrop-blur-xl rounded-2xl bg-primary-250 border border-[#333] overflow-visible'
+            className='relative bg-white/10  backdrop-blur-xl rounded-2xl bg-primary-250 border border-white/10 overflow-visible'
           >
             {/* Top Progress Bar with Glow Effect */}
             <div className='absolute -top-1 left-4 right-60 h-2 z-20 overflow-visible'>
@@ -485,36 +527,42 @@ In the silence, I hear you call`;
                   className='overflow-hidden'
                 >
                   <div className='p-4 pt-0 border-t border-[#333]'>
-                    {/* Header */}
-                    <div className='flex items-center gap-4 py-3'>
-                      <span className='text-sm font-medium text-white'>
-                        Lyrics
-                      </span>
-                    </div>
-
                     {/* Lyrics Content */}
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
                       className='max-h-64 overflow-y-auto'
+                      onWheel={(e) => e.stopPropagation()}
                     >
-                      <div className='space-y-4'>
-                        {/* Comment Input */}
-                        <div className='flex items-center gap-3 p-3 bg-[#262626] rounded-xl'>
-                          <div className='w-8 h-8 rounded-full bg-[#404040] flex items-center justify-center'>
-                            <MessageCircle className='w-4 h-4 text-[#737373]' />
+                      <div className='flex gap-4 h-64'>
+                        {/* Comment Input - Scrollable */}
+                        <div
+                          className='flex-1 overflow-y-auto border-r border-[#333] pr-4'
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          <div className='flex gap-3 p-3 rounded-xl'>
+                            <div className='w-8 h-8 rounded-full flex items-center justify-center shrink-0'>
+                              <User className='w-4 h-4 text-[#737373]' />
+                            </div>
+                            <div className='flex-1'>
+                              <textarea
+                                placeholder='Add your comment...'
+                                rows={4}
+                                className='w-full bg-transparent text-sm text-white placeholder-[#525252] rounded-2xl outline-none border p-2 border-white/20 resize-none'
+                              />
+                            </div>
                           </div>
-                          <input
-                            type='text'
-                            placeholder='Add your comment...'
-                            className='flex-1 bg-transparent text-sm text-white placeholder-[#525252] outline-none'
-                          />
                         </div>
 
-                        {/* Lyrics */}
-                        <div className='text-sm text-[#A3A3A3] whitespace-pre-line leading-relaxed'>
-                          {sampleLyrics}
+                        {/* Lyrics - Scrollable */}
+                        <div
+                          className='flex-1 overflow-y-auto'
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          <div className='text-sm text-[#A3A3A3] whitespace-pre-line leading-relaxed'>
+                            {sampleLyrics}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -550,7 +598,10 @@ In the silence, I hear you call`;
                     </div>
 
                     {/* Queue List */}
-                    <div className='max-h-64 overflow-y-auto overflow-x-visible space-y-1 pr-2'>
+                    <div
+                      className='max-h-64 overflow-y-auto overflow-x-visible space-y-1 pr-2'
+                      onWheel={(e) => e.stopPropagation()}
+                    >
                       {queue.map((track, index) => (
                         <motion.div
                           key={track.id}

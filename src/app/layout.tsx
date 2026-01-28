@@ -41,7 +41,7 @@ export default function RootLayout({
             <MobileHeader />
 
             {/* Desktop Header with Profile */}
-            <header className='hidden md:flex sticky top-0 z-30 items-center justify-end px-6 py-4 bg-gradient-to-b from-[#0D0D0D] to-transparent'>
+            <header className='hidden md:flex sticky top-0 z-30 items-center justify-end px-6 py-4 bg-primary-50'>
               <ProfilePopup />
             </header>
 

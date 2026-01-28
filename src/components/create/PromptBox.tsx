@@ -426,17 +426,25 @@ export function PromptBox() {
             <div className='flex items-center gap-0.5 md:gap-2'>
               {/* Attachment Button with Dropdown */}
               <div className='relative' ref={attachMenuRef}>
-                <button
-                  onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
-                  className={cn(
-                    'w-10 h-10 flex items-center justify-center transition-all border border-white/30 rounded-full',
-                    isAttachMenuOpen
-                      ? 'text-white bg-[#1F1F1F]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
-                  )}
-                >
-                  <Paperclip className='w-5 h-5' />
-                </button>
+                <Tooltip text='Attach file'>
+                  <motion.button
+                    whileHover={{ backgroundColor: '#ffffff10' }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{
+                      scale: { type: 'spring', stiffness: 400, damping: 30 },
+                      backgroundColor: { duration: 0.35, ease: 'easeOut' },
+                    }}
+                    onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
+                    className={cn(
+                      'w-10 h-10 flex items-center justify-center border border-white/30 rounded-full',
+                      isAttachMenuOpen
+                        ? 'text-white'
+                        : 'text-white/90 hover:text-white',
+                    )}
+                  >
+                    <Paperclip className='w-5 h-5' />
+                  </motion.button>
+                </Tooltip>
 
                 <AnimatePresence>
                   {isAttachMenuOpen && (
@@ -477,18 +485,25 @@ export function PromptBox() {
 
               {/* Advanced Settings Button with Dropdown */}
               <div className='relative' ref={advancedMenuRef}>
-                <button
-                  onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                  className={cn(
-                    'w-10 h-10 flex items-center justify-center transition-all border border-white/30 rounded-full',
-                    isAdvancedOpen
-                      ? 'text-white bg-[#1F1F1F]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
-                  )}
-                  title='Advanced settings'
-                >
-                  <Settings2 className='w-5 h-5' />
-                </button>
+                <Tooltip text='Advanced settings'>
+                  <motion.button
+                    whileHover={{ backgroundColor: '#ffffff10' }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{
+                      scale: { type: 'spring', stiffness: 400, damping: 30 },
+                      backgroundColor: { duration: 0.35, ease: 'easeOut' },
+                    }}
+                    onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                    className={cn(
+                      'w-10 h-10 flex items-center justify-center  border border-white/30 rounded-full',
+                      isAdvancedOpen
+                        ? 'text-white bg-[#1F1F1F]'
+                        : 'text-white/90 hover:text-white',
+                    )}
+                  >
+                    <Settings2 className='w-5 h-5' />
+                  </motion.button>
+                </Tooltip>
 
                 <AnimatePresence>
                   {isAdvancedOpen && (
@@ -578,10 +593,18 @@ export function PromptBox() {
 
             <div className='flex items-center gap-2 shrink-0'>
               {/* Tools Dropdown - Hidden on mobile */}
-              <button className='hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F] transition-all'>
+              <motion.button
+                whileHover={{ backgroundColor: '#ffffff10' }}
+                whileTap={{ scale: 0.95 }}
+                transition={{
+                  scale: { type: 'spring', stiffness: 400, damping: 30 },
+                  backgroundColor: { duration: 0.35, ease: 'easeOut' },
+                }}
+                className='hidden md:flex items-center gap-1.5 px-3 py-2 rounded-2xl text-white/95 border border-white/10'
+              >
                 <span className='text-sm'>Tools</span>
                 <ChevronDown className='w-4 h-4' />
-              </button>
+              </motion.button>
 
               {/* Submit Button */}
               <motion.button
@@ -596,7 +619,7 @@ export function PromptBox() {
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center transition-all',
                   prompt.trim() && !isSubmitting
-                    ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF2C9C] text-white shadow-lg shadow-[#FF6B2C]/30'
+                    ? 'bg-white text-black shadow-lg shadow-[#FF6B2C]/30'
                     : 'bg-[#262626] text-[#525252] cursor-not-allowed',
                 )}
               >
@@ -629,6 +652,39 @@ export function PromptBox() {
   );
 }
 
+interface TooltipProps {
+  text: string;
+  children: React.ReactNode;
+}
+
+function Tooltip({ text, children }: TooltipProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div
+      className='relative inline-block'
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            transition={{ duration: 0.15 }}
+            className='absolute top-[120%] left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-primary-400 text-white/75 text-xs rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-xl border border-white/10 font-semibold'
+          >
+            {text}
+            <div className='absolute bottom-full left-1/2 -translate-x-1/2 -mt-px w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-[#262626]' />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 interface ToolbarButtonProps {
   icon: React.ElementType;
   tooltip: string;
@@ -647,21 +703,28 @@ function ToolbarButton({
   onClick,
 }: ToolbarButtonProps) {
   return (
-    <button
-      onClick={onClick}
-      title={tooltip}
-      className={cn(
-        'h-10 border rounded-full flex items-center justify-center transition-all',
-        text ? 'px-3 gap-1.5' : 'w-10',
-        active
-          ? 'border-white text-white bg-white/10'
-          : 'border-white/30 text-[#A3A3A3] hover:text-white hover:bg-[#1F1F1F]',
-        className,
-      )}
-    >
-      <Icon className='w-5 h-5' />
-      {text && <span className='text-sm'>{text}</span>}
-    </button>
+    <Tooltip text={tooltip}>
+      <motion.button
+        whileHover={{ backgroundColor: '#ffffff10' }}
+        whileTap={{ scale: 0.95 }}
+        transition={{
+          scale: { type: 'spring', stiffness: 400, damping: 30 },
+          backgroundColor: { duration: 0.45, ease: 'easeOut' },
+        }}
+        onClick={onClick}
+        className={cn(
+          'h-10 border rounded-full flex items-center justify-center',
+          text ? 'px-3 gap-1.5' : 'w-10',
+          active
+            ? 'border-white text-white '
+            : 'border-white/30 text-white hover:text-white',
+          className,
+        )}
+      >
+        <Icon className='w-5 h-5' />
+        {text && <span className='text-sm'>{text}</span>}
+      </motion.button>
+    </Tooltip>
   );
 }
 

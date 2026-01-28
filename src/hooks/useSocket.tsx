@@ -55,12 +55,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         });
 
         socketRef.current.on('connect', () => {
-          console.log('Socket connected');
           setIsConnected(true);
         });
 
         socketRef.current.on('disconnect', () => {
-          console.log('Socket disconnected');
           setIsConnected(false);
         });
 
@@ -74,7 +72,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             title: string;
             generationIds: string[];
           }) => {
-            console.log('Paired generation started:', data.groupId);
             addPairedGenerationsFromServer(
               data.groupId,
               data.prompt,
